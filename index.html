@@ -1,0 +1,70 @@
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Document Uploader</title>
+<link rel="stylesheet" href="styles.css" /><!-- jQuery (for your existing Power Automate AJAX call) -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js" defer=""></script>
+<!-- App script -->
+<script src="app.js" defer=""></script>
+<div class="container">
+  <header class="header"
+    style="display: flex; align-items: flex-end; justify-content: space-between; row-gap: 16px; column-gap: 16px; margin-bottom: 16px;">
+    <div class="header__titles">
+      <h1
+        style="margin-top: 0px; margin-right: 0px; margin-bottom: 6px; margin-left: 0px; font-weight: 700; color: var(--text-strong); letter-spacing: -0.02em;">
+        Upload Your Documents</h1>
+      <p class="subtitle"
+        style="margin-top: 0px; margin-right: 0px; margin-bottom: 0px; margin-left: 0px; color: var(--muted);">Please
+        attach the required documents and click <strong>Upload All</strong>.</p>
+    </div>
+    <div class="header__actions" style="display: flex; align-items: center; row-gap: 8px; column-gap: 8px;">
+      <button id="uploadAllBtn" class="btn btn-primary"
+        style="position: relative; display: inline-flex; align-items: center; row-gap: 10px; column-gap: 10px; padding-top: 10px; padding-right: 16px; padding-bottom: 10px; padding-left: 16px; border-top-left-radius: 10px; border-top-right-radius: 10px; border-bottom-right-radius: 10px; border-bottom-left-radius: 10px; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-top-style: solid; border-right-style: solid; border-bottom-style: solid; border-left-style: solid; border-image-source: initial; border-image-slice: initial; border-image-width: initial; border-image-outset: initial; border-image-repeat: initial; background-image: initial; background-position-x: initial; background-position-y: initial; background-size: initial; background-repeat: initial; background-attachment: initial; background-origin: initial; background-clip: initial; background-color: rgba(255, 255, 255, 0.063); color: var(--text-strong); font-weight: 600; cursor: pointer; transition-behavior: normal, normal, normal, normal; transition-duration: 0.08s, 0.2s, 0.2s, 0.2s; transition-timing-function: ease, ease, ease, ease; transition-delay: 0s, 0s, 0s, 0s; transition-property: transform, background, border-color, opacity; border-top-color: rgba(255, 255, 255, 0.19); border-right-color: rgba(255, 255, 255, 0.19); border-bottom-color: rgba(255, 255, 255, 0.19); border-left-color: rgba(255, 255, 255, 0.19);"><span
+          aria-hidden="true" class="btn__spinner"
+          style="width: 14px; height: 14px; border-top-width: 2px; border-right-width: 2px; border-bottom-width: 2px; border-left-width: 2px; border-top-style: solid; border-right-style: solid; border-bottom-style: solid; border-left-style: solid; border-right-color: rgba(255, 255, 255, 0.314); border-bottom-color: rgba(255, 255, 255, 0.314); border-left-color: rgba(255, 255, 255, 0.314); border-image-source: initial; border-image-slice: initial; border-image-width: initial; border-image-outset: initial; border-image-repeat: initial; border-top-color: white; border-top-left-radius: 50%; border-top-right-radius: 50%; border-bottom-right-radius: 50%; border-bottom-left-radius: 50%; display: none; animation-duration: 0.9s; animation-timing-function: linear; animation-delay: 0s; animation-iteration-count: infinite; animation-direction: normal; animation-fill-mode: none; animation-play-state: running; animation-name: spin; animation-timeline: auto; animation-range-start: normal; animation-range-end: normal;"></span><span
+          class="btn__label">Upload All</span></button>
+    </div>
+  </header>
+  <section class="card"
+    style="background-image: linear-gradient(rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.01)); background-position-x: initial; background-position-y: initial; background-size: initial; background-repeat: initial; background-attachment: initial; background-origin: initial; background-clip: initial; background-color: initial; border-top-left-radius: 14px; border-top-right-radius: 14px; border-bottom-right-radius: 14px; border-bottom-left-radius: 14px; box-shadow: var(--shadow); overflow-x: hidden; overflow-y: hidden;">
+    <div class="card__body" style="padding-top: 14px; padding-right: 14px; padding-bottom: 14px; padding-left: 14px;">
+      <div class="table-responsive" style="overflow-x: auto;">
+        <table id="docTable" class="table"
+          style="width: 100%; border-collapse: separate; -webkit-border-horizontal-spacing: 0px; -webkit-border-vertical-spacing: 0px; overflow-x: hidden; overflow-y: hidden;">
+          <thead>
+            <tr>
+              <th
+                style="text-align: left; font-weight: 700; color: var(--text-strong); background-image: initial; background-position-x: initial; background-position-y: initial; background-size: initial; background-repeat: initial; background-attachment: initial; background-origin: initial; background-clip: initial; background-color: rgb(15, 22, 49); padding-top: 12px; padding-right: 14px; padding-bottom: 12px; padding-left: 14px; position: sticky; top: 0px; z-index: 1; width: 80px;"
+                align="left" background="initial" bgcolor="rgb(15, 22, 49)">#</th>
+              <th
+                style="text-align: left; font-weight: 700; color: var(--text-strong); background-image: initial; background-position-x: initial; background-position-y: initial; background-size: initial; background-repeat: initial; background-attachment: initial; background-origin: initial; background-clip: initial; background-color: rgb(15, 22, 49); padding-top: 12px; padding-right: 14px; padding-bottom: 12px; padding-left: 14px; position: sticky; top: 0px; z-index: 1;"
+                align="left" background="initial" bgcolor="rgb(15, 22, 49)">Document Name</th>
+              <th
+                style="text-align: left; font-weight: 700; color: var(--text-strong); background-image: initial; background-position-x: initial; background-position-y: initial; background-size: initial; background-repeat: initial; background-attachment: initial; background-origin: initial; background-clip: initial; background-color: rgb(15, 22, 49); padding-top: 12px; padding-right: 14px; padding-bottom: 12px; padding-left: 14px; position: sticky; top: 0px; z-index: 1; width: 340px;"
+                align="left" background="initial" bgcolor="rgb(15, 22, 49)">Attachment</th>
+              <th
+                style="text-align: left; font-weight: 700; color: var(--text-strong); background-image: initial; background-position-x: initial; background-position-y: initial; background-size: initial; background-repeat: initial; background-attachment: initial; background-origin: initial; background-clip: initial; background-color: rgb(15, 22, 49); padding-top: 12px; padding-right: 14px; padding-bottom: 12px; padding-left: 14px; position: sticky; top: 0px; z-index: 1; width: 120px;"
+                align="left" background="initial" bgcolor="rgb(15, 22, 49)">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Rows are injected by app.js -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+  <section id="results" aria-live="polite" class="results"
+    style="margin-top: 16px; padding-top: 12px; padding-right: 14px; padding-bottom: 12px; padding-left: 14px; border-top-left-radius: 12px; border-top-right-radius: 12px; border-bottom-right-radius: 12px; border-bottom-left-radius: 12px; background-image: initial; background-position-x: initial; background-position-y: initial; background-size: initial; background-repeat: initial; background-attachment: initial; background-origin: initial; background-clip: initial; background-color: rgb(14, 20, 48);">
+  </section>
+</div>
+<!-- Toasts -->
+<div id="toast" role="status" aria-live="polite" class="toast"
+  style="position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%) translateY(30px); background-image: initial; background-position-x: initial; background-position-y: initial; background-size: initial; background-repeat: initial; background-attachment: initial; background-origin: initial; background-clip: initial; background-color: rgb(14, 21, 45); color: var(--text); border-top-left-radius: 12px; border-top-right-radius: 12px; border-bottom-right-radius: 12px; border-bottom-left-radius: 12px; padding-top: 12px; padding-right: 16px; padding-bottom: 12px; padding-left: 16px; min-width: 280px; max-width: 90vw; box-shadow: var(--shadow); opacity: 0; pointer-events: none; transition-behavior: normal, normal; transition-duration: 0.2s, 0.2s; transition-timing-function: ease, ease; transition-delay: 0s, 0s; transition-property: transform, opacity;">
+</div>
+<div class="row sectionBlockLayout text-start"
+  style="display: flex; flex-wrap: wrap; margin: 0px; min-height: auto; padding: 8px;">
+  <div class="container" style="padding: 0px; display: flex; flex-wrap: wrap;">
+    <div class="col-lg-12 columnBlockLayout"
+      style="flex-grow: 1; display: flex; flex-direction: column; min-width: 250px;"></div>
+  </div>
+</div>
