@@ -1,211 +1,153 @@
-// ---- Configuration ----
-const POWER_AUTOMATE_URL =
-  "https://5735f8ecc25ce1c99959712e4327b8.d8.environment.api.powerplatform.com/powerautomate/automations/direct/workflows/b2c6e9b6f0b2423caf45fe95e40bd9af/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=uX3qpJWApwDTD302HVQSua88ZJq_TFgO3OpWsoVAjVg";
+// ---- CONFIG ----
+const POWER_AUTOMATE_URL = "PASTE_YOUR_FLOW_URL_HERE";
 
-// The list that drives table rows
-const items = ["ID", "Driving License", "Birth Certificate"];
+// ---- DOCUMENT MASTER LIST ----
+const documents = [
+  { name: "Resume / CV", required: true, formats: ["pdf", "docx"], maxSize: 5, multiple: false },
+  { name: "PAN Card", required: true, maxSize: 2, multiple: false },
+  { name: "Aadhaar Card / Address Proof", required: true, maxSize: 2, multiple: false },
+  { name: "Educational Certificates", required: true, formats: ["pdf", "docx"], maxSize: 5, multiple: true },
+  { name: "Experience Letters", required: true, formats: ["pdf", "docx"], maxSize: 5, multiple: true },
+  { name: "Pay Slips (Last 3 months)", required: true, formats: ["pdf", "docx"], maxSize: 2, multiple: true },
+  { name: "Passport Photograph", required: true, formats: ["jpg", "jpeg", "png"], maxSize: 1, multiple: false },
+  { name: "Offer in Hand", required: true, formats: ["pdf", "docx"], maxSize: 5, multiple: false },
+  { name: "UAN Screenshot", required: true, maxSize: 1, multiple: false },
+  { name: "LWD Confirmation", required: true, formats: ["pdf", "docx"], maxSize: 5, multiple: false },
+  { name: "Bank Details / Cancelled Cheque", required: true, formats: ["pdf", "jpg", "jpeg"], maxSize: 2, multiple: false },
+  { name: "Others (Optional)", required: false, formats: ["pdf", "docx"], maxSize: 5, multiple: false }
+];
 
-// ---- DOM helpers ----
-const $ = (sel, root = document) => root.querySelector(sel);
-const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
-
-function toast(message, variant = "ok", timeout = 2500) {
-  const t = $("#toast");
-  if (!t) return;
-  t.textContent = message;
-  t.className = `toast show ${variant}`;
-  setTimeout(() => {
-    t.classList.remove("show");
-  }, timeout);
-}
-
-function setButtonLoading(isLoading) {
-  const btn = $("#uploadAllBtn");
-  if (!btn) return;
-
-  btn.disabled = isLoading;
-}
-
-// ---- Build table ----
+// ---- BUILD TABLE ----
 function buildTable() {
-  const tbody = $("#docTable tbody");
+  const tbody = document.querySelector("#docTable tbody");
   tbody.innerHTML = "";
 
-  items.forEach((item, idx) => {
-    const index = idx + 1;
-
+  documents.forEach((doc, index) => {
     const tr = document.createElement("tr");
+
     tr.innerHTML = `
-      <td>${index}</td>
-      <td>${item}</td>
+      <td>${index + 1}</td>
+      <td>${doc.name} ${doc.required ? "<span class='required'>*</span>" : ""}</td>
       <td>
-        <input 
-          type="file" 
-          id="file_upload_${index}" 
-          class="input-file"
-          data-doc="${item}"
-        />
+        <input type="file"
+               id="file_${index}"
+               ${doc.multiple ? "multiple" : ""}
+               class="file-input"/>
       </td>
       <td>
-        <span id="status_${index}" class="pill pill--idle">
-          <span class="pill__dot"></span> Pending
-        </span>
+        <span id="status_${index}" class="pill pill--idle">Pending</span>
       </td>
     `;
+
     tbody.appendChild(tr);
   });
 }
 
-// ---- Upload logic ----
-function uploadOne({ docName, file, index }) {
-  const filename = file.name;
-  const form = new FormData();
-  // MUST match Power Automate trigger parameter names
-  form.append("file", file);
-  form.append("filename", filename);
-  // Optional: send document type to Flow
-  form.append("documentType", docName);
+// ---- VALIDATION ----
+function validateFile(file, rule) {
+  const ext = file.name.split(".").pop().toLowerCase();
+  const sizeMB = file.size / (1024 * 1024);
 
-  const statusEl = $(`#status_${index}`);
-  if (statusEl) {
-    statusEl.className = "pill pill--warn";
-    statusEl.innerHTML = `<span class="pill__dot"></span> Uploading…`;
+  if (rule.formats && !rule.formats.includes(ext)) {
+    return `Invalid format (.${ext})`;
   }
 
-  return new Promise((resolve) => {
-    // Using jQuery AJAX per your existing approach
-    window.jQuery.ajax({
-      type: "POST",
-      url: POWER_AUTOMATE_URL,
-      processData: false,
-      contentType: false,
-      data: form,
-      success: function (result) {
-        if (result === "Uploaded") {
-          if (statusEl) {
-            statusEl.className = "pill pill--ok";
-            statusEl.innerHTML = `<span class="pill__dot"></span> Success`;
-          }
-          resolve({ ok: true, docName, filename, index });
-        } else {
-          if (statusEl) {
-            statusEl.className = "pill pill--err";
-            statusEl.innerHTML = `<span class="pill__dot"></span> Unexpected response`;
-          }
-          resolve({
-            ok: false,
-            docName,
-            filename,
-            index,
-            error: "Unexpected response: " + String(result),
-          });
-        }
-      },
-      error: function (xhr, status, error) {
-        if (statusEl) {
-          statusEl.className = "pill pill--err";
-          statusEl.innerHTML = `<span class="pill__dot"></span> Failed`;
-        }
-        resolve({
-          ok: false,
-          docName,
-          filename,
-          index,
-          error: `${status}: ${error}`,
-        });
-      },
-    });
-  });
+  if (sizeMB > rule.maxSize) {
+    return `File exceeds ${rule.maxSize}MB`;
+  }
+
+  return null;
 }
 
+// ---- UPLOAD ----
 async function uploadAll() {
-  const resultsEl = $("#results");
-  resultsEl.innerHTML = "";
-  setButtonLoading(true);
-
-  // Collect selected files only
-  const selections = $$(".input-file")
-    .filter((input) => input.files && input.files.length > 0)
-    .map((input) => {
-      const id = input.id;
-      const index = Number(id.split("_").pop());
-      return {
-        index,
-        docName: input.getAttribute("data-doc"),
-        file: input.files[0],
-      };
-    });
-
-  if (selections.length === 0) {
-    setButtonLoading(false);
-    toast("Please choose at least one file to upload.", "err");
+  const address = document.getElementById("addressField").value.trim();
+  if (!address) {
+    toast("Address is mandatory", "err");
     return;
   }
 
-  // Kick off uploads in parallel
-  const promises = selections.map((s) => uploadOne(s));
-  const results = await Promise.all(promises);
+  const formData = new FormData();
+  formData.append("candidateName", document.getElementById("candidateName").innerText);
+  formData.append("applicationId", document.getElementById("applicationId").innerText);
+  formData.append("jobTitle", document.getElementById("jobTitle").innerText);
+  formData.append("address", address);
 
-  // Aggregate
-  const successes = results.filter((r) => r.ok);
-  const failures = results.filter((r) => !r.ok);
+  let hasError = false;
 
-  // Render summary
-  const summary = document.createElement("div");
-  const title = document.createElement("h3");
+  documents.forEach((doc, index) => {
+    const input = document.getElementById(`file_${index}`);
+    const statusEl = document.getElementById(`status_${index}`);
 
-  if (failures.length === 0) {
-    title.textContent = `All ${successes.length} file(s) uploaded successfully.`;
-    summary.appendChild(title);
-
-    const ul = document.createElement("ul");
-    successes.forEach((s) => {
-      const li = document.createElement("li");
-      li.textContent = `${s.docName} — ${s.filename}`;
-      ul.appendChild(li);
-    });
-    summary.appendChild(ul);
-
-    resultsEl.appendChild(summary);
-    toast("All files uploaded successfully ✅", "ok");
-  } else {
-    // Success list (if any)
-    if (successes.length > 0) {
-      const h3ok = document.createElement("h3");
-      h3ok.textContent = `${successes.length} file(s) uploaded successfully:`;
-      summary.appendChild(h3ok);
-      const ulOk = document.createElement("ul");
-      successes.forEach((s) => {
-        const li = document.createElement("li");
-        li.textContent = `${s.docName} — ${s.filename}`;
-        ulOk.appendChild(li);
-      });
-      summary.appendChild(ulOk);
+    if (doc.required && input.files.length === 0) {
+      statusEl.className = "pill pill--err";
+      statusEl.innerText = "Required";
+      hasError = true;
+      return;
     }
 
-    // Failure list
-    const h3err = document.createElement("h3");
-    h3err.textContent = `${failures.length} file(s) failed to upload:`;
-    summary.appendChild(h3err);
-
-    const ulErr = document.createElement("ul");
-    failures.forEach((f) => {
-      const li = document.createElement("li");
-      li.textContent = `${f.docName} — ${f.filename} → ${f.error}`;
-      ulErr.appendChild(li);
+    Array.from(input.files).forEach(file => {
+      const validationError = validateFile(file, doc);
+      if (validationError) {
+        statusEl.className = "pill pill--err";
+        statusEl.innerText = validationError;
+        hasError = true;
+      } else {
+        formData.append("files", file);
+        formData.append("docType", doc.name);
+        statusEl.className = "pill pill--warn";
+        statusEl.innerText = "Ready";
+      }
     });
-    summary.appendChild(ulErr);
+  });
 
-    resultsEl.appendChild(summary);
-    toast("Some uploads failed ❌", "err");
+  if (hasError) {
+    toast("Please fix errors before submitting", "err");
+    return;
   }
 
-  setButtonLoading(false);
+  document.getElementById("uploadAllBtn").classList.add("loading");
+
+  try {
+    const response = await fetch(POWER_AUTOMATE_URL, {
+      method: "POST",
+      body: formData
+    });
+
+    if (response.ok) {
+      toast("Documents submitted successfully ✅", "ok");
+      document.getElementById("submissionStatus").innerText =
+        "Document Submission – Completed";
+      document.getElementById("submissionStatus").className =
+        "status-badge completed";
+    } else {
+      toast("Upload failed ❌", "err");
+    }
+  } catch (error) {
+    toast("Server error ❌", "err");
+  }
+
+  document.getElementById("uploadAllBtn").classList.remove("loading");
 }
 
-// ---- Init ----
+// ---- CHAR COUNTER ----
+document.addEventListener("input", e => {
+  if (e.target.id === "addressField") {
+    document.getElementById("charCount").innerText =
+      e.target.value.length;
+  }
+});
+
+// ---- TOAST ----
+function toast(message, type) {
+  const t = document.getElementById("toast");
+  t.innerText = message;
+  t.className = `toast show ${type}`;
+  setTimeout(() => t.classList.remove("show"), 3000);
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   buildTable();
-  const btn = document.getElementById("uploadAllBtn");
-  btn.addEventListener("click", uploadAll);
+  document.getElementById("uploadAllBtn")
+    .addEventListener("click", uploadAll);
 });
