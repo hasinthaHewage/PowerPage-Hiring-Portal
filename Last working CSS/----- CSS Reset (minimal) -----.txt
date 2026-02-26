@@ -9,12 +9,11 @@ img { max-width: 100%; display: block; }
   --card: #121831;
   --muted: #94a3b8;
   --text: #e5e7eb;
-  --text-strong: #fdfbfb;
-    --text-strong-dark: #000000;
-  --border: #0e1530;
-  --primary: #0e1530;      /* Indigo */
-  --primary-600: #0e1530;
-  --primary-700: #0e1530;
+  --text-strong: #f8fafc;
+  --border: #233055;
+  --primary: #4f46e5;      /* Indigo */
+  --primary-600: #4338ca;
+  --primary-700: #3730a3;
   --success: #16a34a;
   --danger: #dc2626;
   --warning: #d97706;
@@ -49,20 +48,19 @@ body {
 .header__titles h1{
   margin: 0 0 6px 0;
   font-weight: 700;
-  color: var(--text-strong-dark);
+  color: var(--text-strong);
   letter-spacing: -0.02em;
 }
 
 .subtitle{
   margin: 0;
-  color: var(--text-strong-dark);
+  color: var(--muted);
 }
 
 .header__actions{
   display: flex;
   align-items: center;
   gap: 8px;
-
 }
 
 /* ----- Card ----- */
@@ -77,42 +75,37 @@ body {
 .card__body{ padding: 14px; }
 
 /* ----- Buttons ----- */
-/* Keep base button using theme text color */
-.btn {
-  display:inline-flex; align-items:center; gap:10px;
-  padding:10px 16px; border-radius:10px; border:1px solid transparent;
-  background:#0f1631; color: var(--text-strong); font-weight:600;
+.btn{
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: #ffffff10;
+  color: var(--text-strong);
+  font-weight: 600;
+  cursor: pointer;
   transition: transform .08s ease, background .2s ease, border-color .2s ease, opacity .2s ease;
 }
 
-/* Force white text on strong indigo backgrounds */
-.btn.btn-primary {
-  color: #fff;
-}
-
-
-.btn-primary:hover{
-
-    background:#0f1631; color: var(--text-strong); font-weight:600;
-}
 .btn:hover{ transform: translateY(-1px); }
 
 .btn:disabled{
-  
+  opacity: 0.6;
   cursor: not-allowed;
   transform: none;
-  
- background: #ffffff !important;   /* your disabled blue */
-
-  color:   #121831 !important ;
-  opacity: 1;
-  border-radius:10px; border:2px solid    #121831 !important;
-
-
 }
 
+.btn-primary{
+  background: linear-gradient(180deg, var(--primary), var(--primary-600));
+  border-color: #ffffff30;
+}
 
-
+.btn-primary:hover{
+  background: linear-gradient(180deg, var(--primary-600), var(--primary-700));
+}
 
 .btn__spinner{
   width: 14px; height: 14px;
@@ -128,12 +121,15 @@ body {
 @keyframes spin{ to { transform: rotate(360deg); } }
 
 /* ----- Table ----- */
-/* ----- Table ----- */
+
+
+
+
 .table{
   width: 100%;
-  border-collapse: separate;   /* good for sticky + rounded corners */
+  border-collapse: separate;
   border-spacing: 0;
-  /* overflow: hidden;  <-- REMOVE this; it can break sticky/clipping */
+  overflow: hidden; 
 }
 
 .table thead th{
@@ -145,15 +141,8 @@ body {
   padding: 12px 14px;
   position: sticky;
   top: 0;
-  z-index: 2;
-}
-
-/* Optional: rounded corners on the header row */
-.table thead th:first-child {
-  border-top-left-radius: 12px;
-}
-.table thead th:last-child {
-  border-top-right-radius: 12px;
+  z-index: 1;
+ 
 }
 
 .table tbody td{
@@ -165,54 +154,21 @@ body {
 .table tbody tr:nth-child(odd){ background: var(--table-stripe); }
 .table tbody tr:hover{ background: rgba(255,255,255,0.03); }
 
-/* Make the container scroll vertically so sticky works */
-.table-responsive{
-  overflow: auto;      /* allow both axes */
-  max-height: 420px;   /* set a height to see sticky behavior */
-}
-
-/* ----- Responsive ----- */
-@media (max-width: 640px){
-  .header{
-    flex-direction: column;
-    align-items: stretch;
-  }
-  .header__actions{
-    justify-content: flex-end;
-  }
-}
-
-
-
-
 /* ----- Inputs ----- */
 .input-file{
   appearance: none;
   width: 100%;
   padding: 10px 12px;
   border-radius: 10px;
-  border: 1px solid var(  --text-strong-dark);
+  border: 1px dashed #5b6aa6;
   background: #0e1530;
   color: var(--text);
- 
   outline: none;
   transition: border-color .2s ease, background .2s ease;
 }
 
 .input-file:hover{ border-color: #7f90d6; }
 .input-file:focus{ border-color: var(--primary); background: #0d1330; }
-
-.input-error { border-color: #0e0000 !important; background: #f5f3f3 !important;  color: var(  --text-strong-dark);}
-
-
-
-
-.req-asterisk {
-  color: #dc2626;           /* red-600 */
-  margin-left: 4px;
-  font-weight: 700;
-}
-
 
 /* ----- Status Pills ----- */
 .pill{
@@ -285,6 +241,10 @@ body {
 .toast.ok{ border-color: #0f5132; background: #0a1f17; color: #d1fae5; }
 .toast.err{ border-color: #842029; background: #1a0f12; color: #fee2e2; }
 
+/* ----- Responsive ----- */
+.table-responsive{
+  overflow-x: auto;
+}
 
 @media (max-width: 640px){
   .header{
@@ -296,83 +256,3 @@ body {
   }
 }
 
-
-
-.tooltip-when-disabled {
-  position: relative;
-  display: inline-block;
-}
-
-/* Show tooltip ONLY if the child button is disabled */
-.tooltip-when-disabled:has(button:disabled)::after {
-  content: attr(data-tip);
-  position: absolute;
-  left: 50%;
-  bottom: calc(100% + 8px);         /* position above the button */
-  transform: translateX(-50%) translateY(4px);
-  background: #111a3a;
-  color: #fff;
-  border: 1px solid rgba(255,255,255,.15);
-  border-radius: 6px;
-  padding: 6px 8px;
-  white-space: nowrap;
-  font-size: 12px;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity .15s ease, transform .15s ease;
-  z-index: 10;
-}
-.tooltip-when-disabled:has(button:disabled)::before {
-  content: "";
-  position: absolute;
-  left: 50%;
-  bottom: 100%;
-  transform: translateX(-50%);
-  border: 6px solid transparent;
-  border-top-color: #111a3a;        /* arrow color */
-  opacity: 0;
-  transition: opacity .15s ease;
-}
-
-/* Reveal on hover/focus of the wrapper */
-.tooltip-when-disabled:hover:has(button:disabled)::after,
-.tooltip-when-disabled:focus-within:has(button:disabled)::after,
-.tooltip-when-disabled:hover:has(button:disabled)::before,
-.tooltip-when-disabled:focus-within:has(button:disabled)::before {
-  opacity: 1;
-  transform: translateX(-50%) translateY(0);
-}
-
-/* Optional: cursor hint */
-.tooltip-when-disabled:has(button:disabled) { cursor: not-allowed; }
-
-
-.input-textarea {
-  width: 100%;
-  padding: 10px 12px;
-  border-radius: 10px;
-  border: 1px solid var(--text-strong-dark, #5b6aa6);
-  background: var(--text-strong);
-  color: var(--text-strong-dark);
-  outline: none;
-  resize: vertical;
-  transition: border-color .2s ease, background .2s ease, box-shadow .2s ease;
-}
-
-.input-textarea.input-error {
-  border: 1px solid var(--danger);
-
-  background: var(--text-strong);
-  box-shadow: 0 0 0 2px rgba(229, 57, 53, 0.2);
-}
-
-.char-counter {
-  margin-top: 6px;
-  font-size: 12px;
-  color: var(--muted, #a0acc8);
-}
-
-.req-asterisk {
-  color: var(--danger-500, #e53935);
-  margin-left: 4px;
-}
