@@ -22,13 +22,14 @@ const items = [
 // ---- DOM helpers ----
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
-var emailID = "sivamadhavreddyc@gmail.com";
-let emailID2 = "sivamadhavreddyc@gmail.com";
+var emailID = "sivamadhavreddyc@gmail.com";// ---- A Dmmy data for testing ----
+let emailID2 = "sivamadhavreddyc@gmail.com";// ---- A Dmmy data for testing ----
+let isAddressEmpty;
 
 
 async function setCandidateDetails(emailID) {
   const email = emailID;
- 
+
 
   const candidate = await getCandidateByEmail(email);
 
@@ -117,7 +118,7 @@ function buildTable() {
   items.forEach((item, idx) => {
     const index = idx + 1;
     const accept = toAcceptAttr(item.formats);
-    const allowMultiple = !item.required;  // <-- key rule: required = single, optional = multiple
+    const allowMultiple = item.multiple ?? false;  // <-- key rule: required = single, optional = multiple
 
     const helperBits = [];
     if (item.formats?.length) helperBits.push(`Allowed: ${item.formats.join(", ").toUpperCase()}`);
@@ -148,6 +149,7 @@ function buildTable() {
           ${allowMultiple ? "multiple" : ""}
           ${accept ? `accept="${accept}"` : ""}
         />
+        
       
       <td>
         <span id="status_${index}" class="pill pill--idle">
@@ -184,6 +186,7 @@ function collectSelectionsAndValidate() {
     const files = input.files;
     const docName = input.getAttribute("data-doc") || "";
     const required = input.getAttribute("data-required") === "1";
+    const allowMultiplenew = input.hasAttribute('multiple');
     const maxSize = Number(input.getAttribute("data-maxsize")) || 0;
     let formats = [];
     try { formats = JSON.parse(input.getAttribute("data-formats") || "[]").map(f => String(f).toLowerCase()); } catch { }
@@ -210,7 +213,7 @@ function collectSelectionsAndValidate() {
 
     if (!files || files.length === 0) return;
 
-    const allowMultiple = !required; // core rule
+    const allowMultiple = allowMultiplenew; // core rule
     const chosen = allowMultiple ? Array.from(files) : [files[0]];
 
     const id = input.id;
@@ -250,11 +253,15 @@ function allRequiredSatisfied() {
 }
 
 function refreshUploadButtonState() {
+  const addressField = document.querySelector("#address_text_14");
+
+  isAddressEmpty = (addressField.value.trim() === "");
+ 
   const btn = $("#uploadAllBtn");
   if (!btn) return;
 
   const { errors } = collectSelectionsAndValidate();
-  btn.disabled = !allRequiredSatisfied() || errors.length > 0;
+  btn.disabled = !allRequiredSatisfied() || errors.length > 0 || isAddressEmpty;
 }
 
 // ---- Upload logic ----
@@ -394,7 +401,7 @@ async function uploadAll() {
       ul.appendChild(li);
     });
     summary.appendChild(ul);
-    toast("All files uploaded successfully ✅", "ok");
+    toast("All files uploaded successfully ", "ok");
   } else {
     if (successes.length) {
       const h3ok = document.createElement("h3");
