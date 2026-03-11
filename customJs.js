@@ -25,6 +25,7 @@ const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
 var emailID = "sivamadhavreddyc@gmail.com";// ---- A Dmmy data for testing ----
 let emailID2 = "sivamadhavreddyc@gmail.com";// ---- A Dmmy data for testing ----
 let isAddressEmpty;
+let candidateIdGlobal;
 
 
 async function setCandidateDetails(emailID) {
@@ -38,6 +39,7 @@ async function setCandidateDetails(emailID) {
     setTextById("candidateName", candidate.cra3f_lastname);
     setTextById("applicationId", candidate.cra3f_candidatecode);
     setTextById("jobTitle", candidate.cra3f_requirementtitle);
+    candidateIdGlobal=candidate.cra3f_candidatecode;
   }
 };
 
@@ -270,9 +272,13 @@ function uploadOne({ docName, file, index }) {
   const form = new FormData();
   // MUST match Power Automate trigger parameter names
   form.append("file", file);
-  form.append("filename", filename);
+  form.append("filename",docName+"-"+ filename);
   // Optional: send document type to Flow
   form.append("documentType", docName);
+
+  if (candidateIdGlobal) {                        // new field
+    form.append("candidateId", candidateIdGlobal);
+  }
 
   const statusEl = $(`#status_${index}`);
   if (statusEl) {
