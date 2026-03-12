@@ -1,5 +1,6 @@
 // ---- Configuration ----
 const POWER_AUTOMATE_URL = "/_api/cloudflow/v1.0/trigger/17a831ce-3f1c-f111-8341-70a8a529124a";
+const POWER_AUTOMATE_URL_COMPLETE = "/_api/cloudflow/v1.0/trigger/846cd198-db1d-f111-8341-70a8a529124a";
 
 // ---- Full Document Master List ----
 const items = [
@@ -443,6 +444,14 @@ async function uploadAll() {
     });
     summary.appendChild(ul);
     toast("All files uploaded successfully ", "ok");
+ 
+      // ✅ ADD THIS — trigger completion flow
+    const completionResult = await triggerCompletionFlow();
+    if (completionResult.ok) {
+       alert("Recruiter Email Sent Successfully");
+    }else{
+      alert("File saved,Recruiter Email Send Failed");
+    }
   } else {
     if (successes.length) {
       const h3ok = document.createElement("h3");
@@ -658,3 +667,23 @@ async function sendAddressOnce() {
       });
   });
 }
+
+async function triggerCompletionFlow() {
+  const payload = {
+    eventData: JSON.stringify({
+      CandidateID: candidateIdGlobal || "C-000000"
+  
+    })
+  };
+
+  return new Promise((resolve) => {
+    shell.ajaxSafePost({
+      type: "POST",
+      url: POWER_AUTOMATE_URL_COMPLETE,
+      data: payload
+    })
+      .done(() => resolve({ ok: true }))
+      .fail(() => resolve({ ok: false }));
+  });
+}
+
