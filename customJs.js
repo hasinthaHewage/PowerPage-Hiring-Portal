@@ -38,7 +38,7 @@ async function setCandidateDetails(emailID) {
     setTextById("candidateName", candidate.cra3f_lastname);
     setTextById("applicationId", candidate.cra3f_candidatecode);
     setTextById("jobTitle", candidate.cra3f_requirementtitle);
-    candidateIdGlobal=candidate.cra3f_candidatecode;
+    candidateIdGlobal = candidate.cra3f_candidatecode;
   }
 };
 
@@ -257,7 +257,7 @@ function refreshUploadButtonState() {
   const addressField = document.querySelector("#address_text_14");
 
   isAddressEmpty = (addressField.value.trim() === "");
- 
+
   const btn = $("#uploadAllBtn");
   if (!btn) return;
 
@@ -290,7 +290,7 @@ async function uploadOne({ docName, file, index }) {
     // Prepare API payload
     const data = {
       FileTest: {
-        name: docName+"-"+ filename,
+        name: docName + "-" + filename,
         contentBytes: base64File
       },
       CandidateID: candidateIdGlobal || "C-000000",
@@ -307,32 +307,32 @@ async function uploadOne({ docName, file, index }) {
         url: POWER_AUTOMATE_URL,
         data: payload
       })
-      .done(function () {
+        .done(function () {
 
-        if (statusEl) {
-          statusEl.className = "pill pill--ok";
-          statusEl.innerHTML = `<span class="pill__dot"></span> Success`;
-        }
+          if (statusEl) {
+            statusEl.className = "pill pill--ok";
+            statusEl.innerHTML = `<span class="pill__dot"></span> Success`;
+          }
 
-        resolve({ ok: true, docName, filename, index });
+          resolve({ ok: true, docName, filename, index });
 
-      })
-      .fail(function () {
+        })
+        .fail(function () {
 
-        if (statusEl) {
-          statusEl.className = "pill pill--err";
-          statusEl.innerHTML = `<span class="pill__dot"></span> Failed`;
-        }
+          if (statusEl) {
+            statusEl.className = "pill pill--err";
+            statusEl.innerHTML = `<span class="pill__dot"></span> Failed`;
+          }
 
-        resolve({
-          ok: false,
-          docName,
-          filename,
-          index,
-          error: "Upload failed"
+          resolve({
+            ok: false,
+            docName,
+            filename,
+            index,
+            error: "Upload failed"
+          });
+
         });
-
-      });
 
     });
 
@@ -388,9 +388,9 @@ async function uploadAll() {
     return;
   }
 
- 
-  await sendAddressOnce();
-  
+
+  const addressResult = await sendAddressOnce();
+
 
   const uploadingIndexes = new Set(selections.map(s => s.index));
   uploadingIndexes.forEach(i => {
@@ -401,7 +401,8 @@ async function uploadAll() {
     }
   });
 
-  const results = await Promise.all(selections.map(uploadOne));
+  const fileResults = await Promise.all(selections.map(uploadOne));
+  const results = addressResult ? [addressResult, ...fileResults] : fileResults;
 
   const successes = results.filter(r => r.ok);
   const failures = results.filter(r => !r.ok);
@@ -431,7 +432,13 @@ async function uploadAll() {
     const ul = document.createElement("ul");
     successes.forEach(s => {
       const li = document.createElement("li");
-      li.textContent = `${s.docName} — ${s.filename}`;
+
+      if (s.type === "Address") {
+        li.textContent = `Address - ${s.value} submitted`;
+      } else {
+        li.textContent = `${s.docName} — ${s.filename}`;
+      }
+
       ul.appendChild(li);
     });
     summary.appendChild(ul);
@@ -444,8 +451,14 @@ async function uploadAll() {
       const ulOk = document.createElement("ul");
       successes.forEach(s => {
         const li = document.createElement("li");
-        li.textContent = `${s.docName} — ${s.filename}`;
-        ulOk.appendChild(li);
+
+        if (s.type === "Address") {
+          li.textContent = `Address - ${s.value} submitted`;
+        } else {
+          li.textContent = `${s.docName} — ${s.filename}`;
+        }
+
+        ul.appendChild(li);
       });
       summary.appendChild(ulOk);
     }
@@ -455,7 +468,13 @@ async function uploadAll() {
     const ulErr = document.createElement("ul");
     failures.forEach(f => {
       const li = document.createElement("li");
-      li.textContent = `${f.docName} — ${f.filename} → ${f.error}`;
+
+      if (f.type === "Address") {
+        li.textContent = `Address - ${f.value} → ${f.error}`;
+      } else {
+        li.textContent = `${f.docName} — ${f.filename} → ${f.error}`;
+      }
+
       ulErr.appendChild(li);
     });
     summary.appendChild(ulErr);
@@ -591,20 +610,16 @@ function setTextById(id, value) {
 async function sendAddressOnce() {
   const addressField = document.querySelector('textarea[id^="address_text_"]');
   const addressValue = addressField ? addressField.value.trim() : "";
-  if (!addressValue) return;
+  if (!addressValue) return { ok: true, type: "Address", address: "" };
 
-  // Get the pill element for status update
   const statusEl = addressField.closest('tr').querySelector('span[id^="status_"]');
+
   if (statusEl) {
     statusEl.className = "pill pill--warn";
     statusEl.innerHTML = `<span class="pill__dot"></span> Uploading…`;
   }
 
   const addressPayload = {
-    FileTest: {
-      name: "Address.txt",
-      contentBytes: btoa(addressValue)
-    },
     CandidateID: candidateIdGlobal || "C-000000",
     Type: "Address",
     Address: addressValue
@@ -616,21 +631,30 @@ async function sendAddressOnce() {
       url: POWER_AUTOMATE_URL,
       data: { eventData: JSON.stringify(addressPayload) }
     })
-    .done(() => {
-      if (statusEl) {
-        statusEl.className = "pill pill--ok";
-        statusEl.innerHTML = `<span class="pill__dot"></span> Success`;
-      }
-      toast("Address sent successfully", "ok");
-      resolve({ ok: true });
-    })
-    .fail(() => {
-      if (statusEl) {
-        statusEl.className = "pill pill--err";
-        statusEl.innerHTML = `<span class="pill__dot"></span> Failed`;
-      }
-      toast("Failed to send address", "err");
-      resolve({ ok: false });
-    });
+      .done(() => {
+        if (statusEl) {
+          statusEl.className = "pill pill--ok";
+          statusEl.innerHTML = `<span class="pill__dot"></span> Success`;
+        }
+
+        resolve({
+          ok: true,
+          type: "Address",
+          value: addressValue
+        });
+      })
+      .fail(() => {
+        if (statusEl) {
+          statusEl.className = "pill pill--err";
+          statusEl.innerHTML = `<span class="pill__dot"></span> Failed`;
+        }
+
+        resolve({
+          ok: false,
+          type: "Address",
+          value: addressValue,
+          error: "Address submission failed"
+        });
+      });
   });
 }
