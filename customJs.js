@@ -1,6 +1,5 @@
 // ---- Configuration ----
-const POWER_AUTOMATE_URL =
-  "https://5735f8ecc25ce1c99959712e4327b8.d8.environment.api.powerplatform.com/powerautomate/automations/direct/workflows/b2c6e9b6f0b2423caf45fe95e40bd9af/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=uX3qpJWApwDTD302HVQSua88ZJq_TFgO3OpWsoVAjVg";
+const POWER_AUTOMATE_URL = "/_api/cloudflow/v1.0/trigger/17a831ce-3f1c-f111-8341-70a8a529124a";
 
 // ---- Full Document Master List ----
 const items = [
@@ -127,7 +126,7 @@ function buildTable() {
     if (item.maxSize) helperBits.push(`Max: ${item.maxSize} MB`);
     helperBits.push(item.required ? "Required" : "Optional");
     if (allowMultiple) helperBits.push("Multiple files allowed");
-    const helper = helperBits.join(" • ");
+    const helper = helperBits.join(" | ");
 
     const tr = document.createElement("tr");
     tr.innerHTML = `
@@ -267,18 +266,8 @@ function refreshUploadButtonState() {
 }
 
 // ---- Upload logic ----
-function uploadOne({ docName, file, index }) {
+async function uploadOne({ docName, file, index }) {
   const filename = file.name;
-  const form = new FormData();
-  // MUST match Power Automate trigger parameter names
-  form.append("file", file);
-  form.append("filename",docName+"-"+ filename);
-  // Optional: send document type to Flow
-  form.append("documentType", docName);
-
-  if (candidateIdGlobal) {                        // new field
-    form.append("candidateId", candidateIdGlobal);
-  }
 
   const statusEl = $(`#status_${index}`);
   if (statusEl) {
@@ -286,51 +275,86 @@ function uploadOne({ docName, file, index }) {
     statusEl.innerHTML = `<span class="pill__dot"></span> Uploading…`;
   }
 
-  return new Promise((resolve) => {
-    // Using jQuery AJAX per your existing approach
-    window.jQuery.ajax({
-      type: "POST",
-      url: POWER_AUTOMATE_URL,
-      processData: false,
-      contentType: false,
-      data: form,
-      success: function (result) {
-        if (result === "Uploaded") {
-          if (statusEl) {
-            statusEl.className = "pill pill--ok";
-            statusEl.innerHTML = `<span class="pill__dot"></span> Success`;
-          }
-          resolve({ ok: true, docName, filename, index });
-        } else {
-          if (statusEl) {
-            statusEl.className = "pill pill--err";
-            statusEl.innerHTML = `<span class="pill__dot"></span> Unexpected response`;
-          }
-          resolve({
-            ok: false,
-            docName,
-            filename,
-            index,
-            error: "Unexpected response: " + String(result),
-          });
-        }
+  try {
+
+    // Convert file to Base64
+    const base64File = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = function () {
+        resolve(reader.result.split(',')[1]);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+
+    // Prepare API payload
+    const data = {
+      FileTest: {
+        name: docName+"-"+ filename,
+        contentBytes: base64File
       },
-      error: function (xhr, status, error) {
+      CandidateID: candidateIdGlobal || "C-000000",
+      Type: docName
+    };
+
+    const payload = {};
+    payload.eventData = JSON.stringify(data);
+
+    return new Promise((resolve) => {
+
+      shell.ajaxSafePost({
+        type: "POST",
+        url: POWER_AUTOMATE_URL,
+        data: payload
+      })
+      .done(function () {
+
+        if (statusEl) {
+          statusEl.className = "pill pill--ok";
+          statusEl.innerHTML = `<span class="pill__dot"></span> Success`;
+        }
+
+        resolve({ ok: true, docName, filename, index });
+
+      })
+      .fail(function () {
+
         if (statusEl) {
           statusEl.className = "pill pill--err";
           statusEl.innerHTML = `<span class="pill__dot"></span> Failed`;
         }
+
         resolve({
           ok: false,
           docName,
           filename,
           index,
-          error: `${status}: ${error}`,
+          error: "Upload failed"
         });
-      },
+
+      });
+
     });
-  });
+
+  } catch (error) {
+
+    if (statusEl) {
+      statusEl.className = "pill pill--err";
+      statusEl.innerHTML = `<span class="pill__dot"></span> Failed`;
+    }
+
+    return {
+      ok: false,
+      docName,
+      filename,
+      index,
+      error: error.message
+    };
+
+  }
 }
+
+
 async function uploadAll() {
   const resultsEl = $("#results");
   resultsEl.innerHTML = "";
@@ -363,6 +387,10 @@ async function uploadAll() {
     btn.disabled = false;
     return;
   }
+
+ 
+  await sendAddressOnce();
+  
 
   const uploadingIndexes = new Set(selections.map(s => s.index));
   uploadingIndexes.forEach(i => {
@@ -487,9 +515,9 @@ function addAddressRow() {
   const helper = [
     'Address verification document',
     'Text area',
-    required ? 'Yes' : 'No',
+    required ? 'Required' : 'No',
     `0/${maxChars} characters limit`
-  ].join(' • ');
+  ].join(' | ');
 
   const tr = document.createElement('tr');
   tr.innerHTML = `
@@ -560,4 +588,49 @@ function setTextById(id, value) {
   }
 }
 
+async function sendAddressOnce() {
+  const addressField = document.querySelector('textarea[id^="address_text_"]');
+  const addressValue = addressField ? addressField.value.trim() : "";
+  if (!addressValue) return;
 
+  // Get the pill element for status update
+  const statusEl = addressField.closest('tr').querySelector('span[id^="status_"]');
+  if (statusEl) {
+    statusEl.className = "pill pill--warn";
+    statusEl.innerHTML = `<span class="pill__dot"></span> Uploading…`;
+  }
+
+  const addressPayload = {
+    FileTest: {
+      name: "Address.txt",
+      contentBytes: btoa(addressValue)
+    },
+    CandidateID: candidateIdGlobal || "C-000000",
+    Type: "Address",
+    Address: addressValue
+  };
+
+  return new Promise((resolve) => {
+    shell.ajaxSafePost({
+      type: "POST",
+      url: POWER_AUTOMATE_URL,
+      data: { eventData: JSON.stringify(addressPayload) }
+    })
+    .done(() => {
+      if (statusEl) {
+        statusEl.className = "pill pill--ok";
+        statusEl.innerHTML = `<span class="pill__dot"></span> Success`;
+      }
+      toast("Address sent successfully", "ok");
+      resolve({ ok: true });
+    })
+    .fail(() => {
+      if (statusEl) {
+        statusEl.className = "pill pill--err";
+        statusEl.innerHTML = `<span class="pill__dot"></span> Failed`;
+      }
+      toast("Failed to send address", "err");
+      resolve({ ok: false });
+    });
+  });
+}
