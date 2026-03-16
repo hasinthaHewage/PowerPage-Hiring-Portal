@@ -121,6 +121,21 @@ border: 1px solid #121831;
   style="position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%) translateY(30px); background-image: initial; background-position-x: initial; background-position-y: initial; background-size: initial; background-repeat: initial; background-attachment: initial; background-origin: initial; background-clip: initial; background-color: rgb(14, 21, 45); color: var(--text); border-top-left-radius: 12px; border-top-right-radius: 12px; border-bottom-right-radius: 12px; border-bottom-left-radius: 12px; padding-top: 12px; padding-right: 16px; padding-bottom: 12px; padding-left: 16px; min-width: 280px; max-width: 90vw; box-shadow: var(--shadow); opacity: 0; pointer-events: none; transition-behavior: normal, normal; transition-duration: 0.2s, 0.2s; transition-timing-function: ease, ease; transition-delay: 0s, 0s; transition-property: transform, opacity;">
 </div>
 
+<!-- Loading Popup Overlay -->
+<div id="loadingPopup" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.35); z-index:9999; justify-content:center; align-items:center;">
+  <div style="background:white; padding:32px 48px; border-radius:16px; box-shadow:0 2px 16px rgba(0,0,0,0.2); font-size:1.3em; display:flex; flex-direction:column; align-items:center;">
+    <div class="loader" style="margin-bottom:16px; width:32px; height:32px; border:4px solid #eee; border-top:4px solid #121831; border-radius:50%; animation:spin 1s linear infinite;"></div>
+      <span style="color:var(--card);">Loading, please wait...</span>
+  </div>
+</div>
+<style>
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+</style>
+
+
 <div class="row sectionBlockLayout text-start"
   style="display: flex; flex-wrap: wrap; margin: 0px; min-height: auto; padding: 8px;">
   <div class="container" style="padding: 0px; display: flex; flex-wrap: wrap;">

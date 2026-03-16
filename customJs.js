@@ -524,6 +524,8 @@ async function uploadAll() {
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
+ // Show loading popup before buildTable
+document.getElementById('loadingPopup').style.display = 'flex';
 
   createEmailVariaible();  // sets emailID from DOM
 
@@ -532,8 +534,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   await getResubmitData();             // fetch resubmit data & set global variable
 
   const itemsToRender = getItemsToRender(); // filter items if needed
-  console.log(itemsToRender);
+  //console.log(itemsToRender);
   buildTable(itemsToRender);
+
+  // Hide loading popup after buildTable
+document.getElementById('loadingPopup').style.display = 'none';
 
   addAddressRow();
   refreshUploadButtonState();
