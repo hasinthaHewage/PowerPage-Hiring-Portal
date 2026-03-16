@@ -4,17 +4,18 @@ html, body { margin: 0; padding: 0; }
 img { max-width: 100%; display: block; }
 
 /* ----- Theme ----- */
+/*  --card: #121831; --primary: #0e1530; --card:  #0399a4(LCM Color) */
 :root{
   --bg: #fbfbfd;
-  --card: #121831;
+  --card:  #121831;
   --muted: #94a3b8;
   --text: #e5e7eb;
   --text-strong: #fdfbfb;
     --text-strong-dark: #000000;
-  --border: #0e1530;
-  --primary: #0e1530;      /* Indigo */
-  --primary-600: #0e1530;
-  --primary-700: #0e1530;
+  --border: #121831;
+  --primary: #0399a4;      /* Indigo */
+  --primary-600: #121831;
+  --primary-700: #121831;
   --success: #16a34a;
   --danger: #dc2626;
   --warning: #d97706;
@@ -34,7 +35,7 @@ body {
 
 /* ----- Layout ----- */
 .container{
-  max-width: 1000px;
+  max-width:auto;
   margin: 0 auto;
 }
 
@@ -104,9 +105,9 @@ body {
   
  background: #ffffff !important;   /* your disabled blue */
 
-  color:   #121831 !important ;
+  color:   var(--card) !important ;
   opacity: 1;
-  border-radius:10px; border:2px solid    #121831 !important;
+  border-radius:10px; border:2px solid    var(--card) !important;
 
 
 }
@@ -192,7 +193,7 @@ body {
   padding: 10px 12px;
   border-radius: 10px;
   border: 1px solid var(  --text-strong-dark);
-  background: #0e1530;
+  background: var(--card);
   color: var(--text);
  
   outline: none;

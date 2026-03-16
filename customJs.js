@@ -1,6 +1,7 @@
 // ---- Configuration ----
 const POWER_AUTOMATE_URL = "/_api/cloudflow/v1.0/trigger/17a831ce-3f1c-f111-8341-70a8a529124a";
 const POWER_AUTOMATE_URL_COMPLETE = "/_api/cloudflow/v1.0/trigger/846cd198-db1d-f111-8341-70a8a529124a";
+const POWER_AUTOMATE_URL_RESUBMISSION = "/_api/cloudflow/v1.0/trigger/913b23fa-f020-f111-88b1-70a8a529124a";
 
 // ---- Full Document Master List ----
 const items = [
@@ -26,6 +27,8 @@ var emailID = "sivamadhavreddyc@gmail.com";// ---- A Dmmy data for testing ----
 let emailID2 = "sivamadhavreddyc@gmail.com";// ---- A Dmmy data for testing ----
 let isAddressEmpty;
 let candidateIdGlobal;
+let resubmitDataGlobal = null;
+const charLength=1000;
 
 
 async function setCandidateDetails(emailID) {
@@ -113,61 +116,86 @@ function toAcceptAttr(formats) {
   return formats.map(ext => "." + String(ext).toLowerCase()).join(",");
 }
 
-function buildTable() {
+function buildTable(itemsToRender) {
   const tbody = $("#docTable tbody");
   tbody.innerHTML = "";
 
-  items.forEach((item, idx) => {
+  itemsToRender.forEach((item, idx) => {
     const index = idx + 1;
     const accept = toAcceptAttr(item.formats);
-    const allowMultiple = item.multiple ?? false;  // <-- key rule: required = single, optional = multiple
+    const allowMultiple = item.multiple ?? false;
 
     const helperBits = [];
+    if (resubmitDataGlobal.length > 0) {
+      helperBits.push(
+        'Issue for Resubmission: ' + (item.Description && item.Description.trim() !== ""
+          ? `<span style="color:red">${item.Description}</span>`
+          : '-')
+      );
+    }
+
     if (item.formats?.length) helperBits.push(`Allowed: ${item.formats.join(", ").toUpperCase()}`);
     if (item.maxSize) helperBits.push(`Max: ${item.maxSize} MB`);
     helperBits.push(item.required ? "Required" : "Optional");
     if (allowMultiple) helperBits.push("Multiple files allowed");
+
     const helper = helperBits.join(" | ");
 
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td>${index}</td>
-      <td>
-        <span>
-          <span><strong>${item.name}</strong>${item.required ? '<span class="req-asterisk">*</span>' : ''}
-        </span>
-        <div style="font-size:12px; color: var(--muted); margin-top:4px;">${helper}</div>
-      </td>
-      <td>
-        <input 
-          type="file"
-          id="file_upload_${index}"
-          class="input-file"
-          data-index="${index}"
-          data-doc="${item.name}"
-          data-required="${item.required ? "1" : "0"}"
-          data-maxsize="${item.maxSize ?? ""}"
-          data-formats='${JSON.stringify(item.formats ?? [])}'
-          ${allowMultiple ? "multiple" : ""}
-          ${accept ? `accept="${accept}"` : ""}
-        />
-        
-      
-      <td>
-        <span id="status_${index}" class="pill pill--idle">
-          <span class="pill__dot"></span> Pending
-        </span>
-      </td>
+     <td>${index}</td>
+
+<td>
+  <span>
+    <span><strong>${item.name}</strong>${item.required ? '<span class="req-asterisk">*</span>' : ''}</span>
+  </span>
+  <div style="font-size:12px;  margin-top:4px;">${helper}</div>
+</td>
+
+<td>
+  <input 
+    type="file"
+    id="file_upload_${index}"
+    class="input-file"
+    data-index="${index}"
+    data-doc="${item.name}"
+    data-required="${item.required ? "1" : "0"}"
+    data-maxsize="${item.maxSize ?? ""}"
+    data-formats='${JSON.stringify(item.formats ?? [])}'
+    ${allowMultiple ? "multiple" : ""}
+    ${accept ? `accept="${accept}"` : ""}
+  />
+</td>
+
+<td>
+  <div class="address-field">
+    <textarea
+      id="description_${index}"
+      class="input-textarea"
+      data-doc="${index}"
+      data-required-text="${true ? '1' : '0'}"
+      maxlength="${charLength}"
+      rows="3"
+     placeholder="Type your Description here (Optional)"
+      aria-describedby="address_counter_${index}"
+    ></textarea>
+    <div id="address_counter_${index}" class="char-counter">0/${charLength}</div>
+  </div>
+</td>
+
+<td>
+  <span id="status_${index}" class="pill pill--idle">
+    <span class="pill__dot"></span> Pending
+  </span>
+</td>
     `;
     tbody.appendChild(tr);
   });
 
-  // (optional) rewire input changes to re-check readiness
   $$(".input-file").forEach(input => {
     input.addEventListener("change", refreshUploadButtonState);
   });
 }
-
 
 function getExt(name = "") {
   const parts = String(name).split(".");
@@ -444,12 +472,12 @@ async function uploadAll() {
     });
     summary.appendChild(ul);
     toast("All files uploaded successfully ", "ok");
- 
-      // ✅ ADD THIS — trigger completion flow
+
+    // ✅ ADD THIS — trigger completion flow
     const completionResult = await triggerCompletionFlow();
     if (completionResult.ok) {
-       alert("Recruiter Email Sent Successfully");
-    }else{
+      alert("Recruiter Email Sent Successfully");
+    } else {
       alert("File saved,Recruiter Email Send Failed");
     }
   } else {
@@ -495,14 +523,22 @@ async function uploadAll() {
   refreshUploadButtonState();
 }
 
-// ---- Init ----
-document.addEventListener("DOMContentLoaded", () => {
-  buildTable();
+document.addEventListener("DOMContentLoaded", async () => {
+
+  createEmailVariaible();  // sets emailID from DOM
+
+  await setCandidateDetails(emailID); // fetch candidate & set global candidateIdGlobal
+
+  await getResubmitData();             // fetch resubmit data & set global variable
+
+  const itemsToRender = getItemsToRender(); // filter items if needed
+  console.log(itemsToRender);
+  buildTable(itemsToRender);
+
   addAddressRow();
   refreshUploadButtonState();
+
   document.getElementById("uploadAllBtn").addEventListener("click", uploadAll);
-  createEmailVariaible();
-  setCandidateDetails(emailID);
 });
 
 // Function to extract email and username and store as global variables
@@ -568,6 +604,22 @@ function addAddressRow() {
           aria-describedby="address_counter_${index}"
         ></textarea>
         <div id="address_counter_${index}" class="char-counter">0/${maxChars}</div>
+      </div>
+    </td>
+        <td>
+      <!-- Address input (textarea) -->
+      <div class="address-field">
+        <textarea
+          id="address_text_${index}"
+          class="input-textarea"
+          data-doc="${name}"
+          data-required-text="${required ? '1' : '0'}"
+          maxlength="${charLength}"
+          rows="3"
+          placeholder="Type your Description here (Optional)"
+          aria-describedby="address_counter_${index}"
+        ></textarea>
+        <div id="address_counter_${index}" class="char-counter">0/${charLength}</div>
       </div>
     </td>
     <td>
@@ -672,7 +724,7 @@ async function triggerCompletionFlow() {
   const payload = {
     eventData: JSON.stringify({
       CandidateID: candidateIdGlobal || "C-000000"
-  
+
     })
   };
 
@@ -687,3 +739,79 @@ async function triggerCompletionFlow() {
   });
 }
 
+
+async function getResubmitData() {
+
+  // Prepare API payload
+  const data = {
+
+    candidateId: candidateIdGlobal || "C-000000"
+
+  };
+
+  const payload = {};
+  payload.eventData = JSON.stringify(data);
+  return new Promise((resolve) => {
+
+    shell.ajaxSafePost({
+      type: "POST",
+      url: POWER_AUTOMATE_URL_RESUBMISSION,
+      data: payload
+    })
+      .done(function (response) {
+
+        console.log("Flow Raw Response:", response);
+
+        try {
+
+          // Parse response if needed
+          const data = typeof response === "string" ? JSON.parse(response) : response;
+
+          if (data.resubmitdata) {
+            resubmitDataGlobal = JSON.parse(data.resubmitdata);
+          }
+
+          console.log("Resubmit Data Parsed:", resubmitDataGlobal);
+
+        } catch (err) {
+          console.error("Error parsing flow response", err);
+        }
+
+        resolve(resubmitDataGlobal);
+
+      })
+      .fail(function (err) {
+        console.error("Flow call failed", err);
+        resolve(null);
+      });
+
+  });
+
+}
+
+
+function getItemsToRender() {
+  // If no API data, return all items
+  if (!resubmitDataGlobal || resubmitDataGlobal.length === 0) {
+    return items;
+  }
+
+  // Only include items present in resubmitDataGlobal
+  const filteredItems = resubmitDataGlobal
+    .map(apiItem => {
+      // Find matching item in static items
+      const staticItem = items.find(i => i.name === apiItem.Docutype);
+      if (!staticItem) return null; // skip if no match
+
+      return {
+        ...staticItem,
+        // Use API description if available, otherwise fallback
+        Description: apiItem.Description && apiItem.Description.trim() !== ""
+          ? apiItem.Description
+          : staticItem.Description || "-"
+      };
+    })
+    .filter(i => i !== null); // remove nulls if API doc not found in static items
+
+  return filteredItems;
+}
