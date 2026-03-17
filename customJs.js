@@ -2,6 +2,7 @@
 const POWER_AUTOMATE_URL = "/_api/cloudflow/v1.0/trigger/17a831ce-3f1c-f111-8341-70a8a529124a";
 const POWER_AUTOMATE_URL_COMPLETE = "/_api/cloudflow/v1.0/trigger/846cd198-db1d-f111-8341-70a8a529124a";
 const POWER_AUTOMATE_URL_RESUBMISSION = "/_api/cloudflow/v1.0/trigger/913b23fa-f020-f111-88b1-70a8a529124a";
+const POWER_AUTOMATE_URL_CANDIDATE = "/_api/cloudflow/v1.0/trigger/02608665-ad21-f111-88b1-70a8a529124a";
 
 // ---- Full Document Master List ----
 const items = [
@@ -12,7 +13,7 @@ const items = [
   { name: "Experience Letters", required: true, formats: ["pdf", "docx"], maxSize: 5, multiple: true },
   { name: "Pay Slips (Last 3 months)", required: true, formats: ["pdf", "docx"], maxSize: 2, multiple: true },
   { name: "Passport Photograph(For HR)", required: true, formats: ["jpg", "jpeg", "png"], maxSize: 1 },
-  { name: "Offer in Hand", required: true, formats: ["pdf", "docx"], maxSize: 5 },
+  { name: "Offer in Hand", required: false, formats: ["pdf", "docx"], maxSize: 5 },
   { name: "UAN Screenshot", required: true, maxSize: 1 },
   { name: "Passport Photograph", required: true, formats: ["jpg", "jpeg", "png"], maxSize: 1 },
   { name: "LWD Confirmation", required: true, formats: ["pdf", "docx"], maxSize: 5 },
@@ -36,15 +37,18 @@ async function setCandidateDetails(emailID) {
 
 
   const candidate = await getCandidateByEmail(email);
+  
 
 
   if (candidate) {
-    setTextById("candidateName", candidate.cra3f_lastname);
-    setTextById("applicationId", candidate.cra3f_candidatecode);
-    setTextById("jobTitle", candidate.cra3f_requirementtitle);
-    candidateIdGlobal = candidate.cra3f_candidatecode;
+    setTextById("candidateName", candidate.lastname);
+    setTextById("applicationId", candidate.candidatecode);
+    setTextById("jobTitle", candidate.requirementtitle);
+    candidateIdGlobal = candidate.candidatecode;
   }
 };
+
+
 
 async function getCandidateByEmail(email) {
   if (!email) {
@@ -52,44 +56,50 @@ async function getCandidateByEmail(email) {
     return null;
   }
 
-  const apiUrl =
-    "/_api/cra3f_candidateprofiles" +
-    "?$select=cra3f_requirementtitle,cra3f_candidatecode,cra3f_lastname" +
-    "&$filter=cra3f_emailid eq '" + email + "'";
+  const payload = {
+    eventData: JSON.stringify({
+      email: email
+    })
+  };
 
-  try {
-    const response = await fetch(apiUrl, {
-      method: "GET",
-      headers: {
-        "Accept": "application/json",
-        "Content-Type": "application/json",
-        "OData-MaxVersion": "4.0",
-        "OData-Version": "4.0"
+  return new Promise((resolve) => {
+
+    shell.ajaxSafePost({
+      type: "POST",
+      url: POWER_AUTOMATE_URL_CANDIDATE,
+      data: payload
+    })
+    .done(function (response) {
+
+      try {
+        const data = typeof response === "string" ? JSON.parse(response) : response;
+
+        if (!data) {
+          alert("No candidate found");
+          resolve(null);
+          return;
+        }
+
+        resolve({
+          lastname: data.lastname,
+          candidatecode: data.candidatecode,
+          requirementtitle: data.requirementtitle
+        });
+
+      } catch (err) {
+        console.error("Parse error:", err);
+        resolve(null);
       }
+
+    })
+    .fail(function (err) {
+      console.error("Flow call failed:", err);
+      alert("Error retrieving candidate");
+      resolve(null);
     });
 
-    if (!response.ok) {
-      throw new Error("API call failed: " + response.status);
-    }
-
-    const data = await response.json();
-
-    if (data.value && data.value.length > 0) {
-      // Return first matching record
-      return data.value[0];
-    } else {
-      console.warn("No candidate found for email:", email);
-      alert("No candidate found for email");
-      return null;
-    }
-  } catch (error) {
-    console.error("Error fetching candidate:", error);
-    alert("Error fetching candidate");
-    return null;
-  }
+  });
 }
-
-
 
 function toast(message, variant = "ok", timeout = 2500) {
   const t = $("#toast");
@@ -213,6 +223,7 @@ function collectSelectionsAndValidate() {
   $$(".input-file").forEach(el => el.classList.remove("input-error"));
 
   $$(".input-file").forEach((input) => {
+    
     const files = input.files;
     const docName = input.getAttribute("data-doc") || "";
     const required = input.getAttribute("data-required") === "1";
@@ -264,7 +275,8 @@ function collectSelectionsAndValidate() {
         return;
       }
 
-      selections.push({ index, docName, file });
+const description = document.getElementById(`description_${index}`)?.value || "";
+selections.push({ index, docName, file, description });
     });
   });
 
@@ -292,10 +304,24 @@ function refreshUploadButtonState() {
 
   const { errors } = collectSelectionsAndValidate();
   btn.disabled = !allRequiredSatisfied() || errors.length > 0 || isAddressEmpty;
+
+
+  //Button Enable and Disable
+
+const wrapper = document.getElementById('uploadAllWrapper');
+
+if (btn.disabled) {
+  btn.style.cursor = 'not-allowed';
+  wrapper.style.cursor = 'not-allowed';
+} else {
+  btn.style.cursor = 'pointer';
+  wrapper.style.cursor = 'pointer';
+}
+
 }
 
 // ---- Upload logic ----
-async function uploadOne({ docName, file, index }) {
+async function uploadOne({ docName, file, index, description }) {
   const filename = file.name;
 
   const statusEl = $(`#status_${index}`);
@@ -323,7 +349,7 @@ async function uploadOne({ docName, file, index }) {
         contentBytes: base64File
       },
       CandidateID: candidateIdGlobal || "C-000000",
-      Type: docName
+      Type: docName,  Description: description 
     };
 
     const payload = {};
@@ -523,6 +549,7 @@ async function uploadAll() {
   refreshUploadButtonState();
 }
 
+//main function
 document.addEventListener("DOMContentLoaded", async () => {
  // Show loading popup before buildTable
 document.getElementById('loadingPopup').style.display = 'flex';
@@ -530,6 +557,11 @@ document.getElementById('loadingPopup').style.display = 'flex';
   createEmailVariaible();  // sets emailID from DOM
 
   await setCandidateDetails(emailID); // fetch candidate & set global candidateIdGlobal
+
+  if (!candidateIdGlobal) {
+  alert("Candidate not found.");
+  return;
+}
 
   await getResubmitData();             // fetch resubmit data & set global variable
 
@@ -615,7 +647,7 @@ function addAddressRow() {
       <!-- Address input (textarea) -->
       <div class="address-field">
         <textarea
-          id="address_text_${index}"
+          id="address_description_${index}"
           class="input-textarea"
           data-doc="${name}"
           data-required-text="${required ? '1' : '0'}"
@@ -675,7 +707,10 @@ function setTextById(id, value) {
 
 async function sendAddressOnce() {
   const addressField = document.querySelector('textarea[id^="address_text_"]');
+  const descriptionField = document.querySelector('textarea[id^="address_description_"]');
   const addressValue = addressField ? addressField.value.trim() : "";
+  const descriptionValue = descriptionField ? descriptionField.value.trim() : "";
+
   if (!addressValue) return { ok: true, type: "Address", address: "" };
 
   const statusEl = addressField.closest('tr').querySelector('span[id^="status_"]');
@@ -688,7 +723,8 @@ async function sendAddressOnce() {
   const addressPayload = {
     CandidateID: candidateIdGlobal || "C-000000",
     Type: "Address",
-    Address: addressValue
+    Address: addressValue,
+    Description: descriptionValue // <-- Add this line
   };
 
   return new Promise((resolve) => {
