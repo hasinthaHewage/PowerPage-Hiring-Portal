@@ -19,6 +19,7 @@ img { max-width: 100%; display: block; }
   --success: #16a34a;
   --danger: #dc2626;
   --warning: #d97706;
+  --warning-error:#747f1d;
   --table-stripe: rgba(255,255,255,0.02);
   --shadow: 0 10px 30px rgba(0,0,0,0.35);
 }

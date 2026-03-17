@@ -551,26 +551,56 @@ async function uploadAll() {
 
 //main function
 document.addEventListener("DOMContentLoaded", async () => {
- // Show loading popup before buildTable
-document.getElementById('loadingPopup').style.display = 'flex';
+  // Show loading popup before buildTable
+  document.getElementById('loadingPopup').style.display = 'flex';
 
   createEmailVariaible();  // sets emailID from DOM
 
   await setCandidateDetails(emailID); // fetch candidate & set global candidateIdGlobal
 
   if (!candidateIdGlobal) {
-  alert("Candidate not found.");
-  return;
-}
+    // Hide main form container
+    const container = document.querySelector('.container');
+    if (container) container.style.display = 'none';
+
+    // Show error message with improved styling
+    let errorMsg = document.getElementById('candidateErrorMsg');
+    const errorHtml = `
+      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 32px 24px; background: #fff; border-radius: 16px; box-shadow: 0 8px 32px rgba(220,38,38,0.12); max-width: 420px; margin: 60px auto; border: 2px solid #747f1d;">
+        <div style="font-size: 48px; color: #747f1d; margin-bottom: 16px;">&#9888;</div>
+        <div style="font-size: 22px; font-weight: 700; color: #747f1d; margin-bottom: 8px;">Candidate Not Found</div>
+        <div style="font-size: 16px; color: #747f1d;">Matching candidate is not in the database.<br>Please check the email or contact HR for assistance.</div>
+      </div>
+    `;
+    if (!errorMsg) {
+      errorMsg = document.createElement('div');
+      errorMsg.id = 'candidateErrorMsg';
+      errorMsg.innerHTML = errorHtml;
+      // Insert after the element with id="antiforgerytoken"
+      const mainContent = document.getElementById('antiforgerytoken');
+      if (mainContent && mainContent.parentNode) {
+        mainContent.parentNode.insertBefore(errorMsg, mainContent.nextSibling);
+      } else {
+        document.body.appendChild(errorMsg); // fallback if not found
+      }
+    } else {
+      errorMsg.innerHTML = errorHtml;
+      errorMsg.style.display = 'block';
+    }
+
+    // Hide loading popup
+    document.getElementById('loadingPopup').style.display = 'none';
+    return;
+  }
 
   await getResubmitData();             // fetch resubmit data & set global variable
 
   const itemsToRender = getItemsToRender(); // filter items if needed
-  //console.log(itemsToRender);
+  
   buildTable(itemsToRender);
 
   // Hide loading popup after buildTable
-document.getElementById('loadingPopup').style.display = 'none';
+  document.getElementById('loadingPopup').style.display = 'none';
 
   addAddressRow();
   refreshUploadButtonState();
