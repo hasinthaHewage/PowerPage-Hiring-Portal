@@ -51,6 +51,7 @@ async function setCandidateDetails(emailID) {
 
 
 async function getCandidateByEmail(email) {
+  
   if (!email) {
     console.error("Email is required");
     return null;
@@ -432,7 +433,7 @@ async function uploadAll() {
       ulErr.appendChild(li);
     });
     summary.appendChild(ulErr);
-    resultsEl.appendChild(summary);
+    showResultsPopup(summary.outerHTML);
     btn.disabled = false;
     return;
   }
@@ -443,9 +444,7 @@ async function uploadAll() {
     return;
   }
 
-
   const addressResult = await sendAddressOnce();
-
 
   const uploadingIndexes = new Set(selections.map(s => s.index));
   uploadingIndexes.forEach(i => {
@@ -502,9 +501,19 @@ async function uploadAll() {
     // ✅ ADD THIS — trigger completion flow
     const completionResult = await triggerCompletionFlow();
     if (completionResult.ok) {
-      alert("Recruiter Email Sent Successfully");
+      //alert("Recruiter Email Sent Successfully");
+      summary.appendChild(document.createElement("hr"));
+      const recruiterMsg = document.createElement("div");
+      recruiterMsg.textContent = "Recruiter Email Sent Successfully";
+      recruiterMsg.style.color = "#16a34a";
+      summary.appendChild(recruiterMsg);
     } else {
-      alert("File saved,Recruiter Email Send Failed");
+      //alert("File saved,Recruiter Email Send Failed");
+      summary.appendChild(document.createElement("hr"));
+      const recruiterMsg = document.createElement("div");
+      recruiterMsg.textContent = "File saved, Recruiter Email Send Failed";
+      recruiterMsg.style.color = "#dc2626";
+      summary.appendChild(recruiterMsg);
     }
   } else {
     if (successes.length) {
@@ -521,7 +530,7 @@ async function uploadAll() {
           li.textContent = `${s.docName} — ${s.filename}`;
         }
 
-        ul.appendChild(li);
+        ulOk.appendChild(li);
       });
       summary.appendChild(ulOk);
     }
@@ -544,10 +553,32 @@ async function uploadAll() {
     toast("Some uploads failed ", "err");
   }
 
-  $("#results").appendChild(summary);
+  showResultsPopup(summary.outerHTML);
   btn.disabled = false;
   refreshUploadButtonState();
 }
+
+// --- Results Popup Modal Logic ---
+function showResultsPopup(htmlContent) {
+  const popup = document.getElementById('resultsPopup');
+  const content = document.getElementById('resultsPopupContent');
+  content.innerHTML = htmlContent;
+  popup.style.display = 'flex';
+}
+
+function hideResultsPopup() {
+  document.getElementById('resultsPopup').style.display = 'none';
+}
+
+// Attach close and navigation logic after DOMContentLoaded
+document.addEventListener("DOMContentLoaded", function() {
+  const closeBtn = document.getElementById('closeResultsPopup');
+  if (closeBtn) closeBtn.onclick = hideResultsPopup;
+  const goHomeBtn = document.getElementById('goHomeBtn');
+  if (goHomeBtn) goHomeBtn.onclick = function() {
+    window.location.href = "/"; // Change to your home page URL if needed
+  };
+});
 
 //main function
 document.addEventListener("DOMContentLoaded", async () => {

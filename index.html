@@ -113,8 +113,22 @@ border: 1px solid #121831;
   </section>
 
   <section id="results" aria-live="polite" class="results"
-    style="margin-top: 16px; padding-top: 12px; padding-right: 14px; padding-bottom: 12px; padding-left: 14px; border-top-left-radius: 12px; border-top-right-radius: 12px; border-bottom-right-radius: 12px; border-bottom-left-radius: 12px; background-image: initial; background-position-x: initial; background-position-y: initial; background-size: initial; background-repeat: initial; background-attachment: initial; background-origin: initial; background-clip: initial; background-color: rgb(14, 20, 48);">
+    style="margin-top: 16px; padding-top: 12px; padding-right: 14px; padding-bottom: 12px; padding-left: 14px; border-top-left-radius: 12px; border-top-right-radius: 12px; border-bottom-right-radius: 12px; border-bottom-left-radius: 12px; background-image: initial; background-position-x: initial; background-position-y: initial; background-size: initial; background-repeat: initial; background-attachment: initial; background-origin: initial; background-clip: initial; background-color: rgb(14, 20, 48); display:none;">
   </section>
+
+  <!-- Results Popup Modal -->
+  <div id="resultsPopup" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.35); z-index:10000; justify-content:center; align-items:center;">
+    <div class="card" style="padding:0; min-width:340px; max-width:95vw; position:relative; display:flex; flex-direction:column; align-items:stretch; box-shadow: var(--shadow); border-radius: 16px;">
+      <div style="display:flex; align-items:center; justify-content:space-between; padding: 18px 24px 0 24px;">
+        <span style="font-size: 1.2em; font-weight: 700; color: var(--primary-700);">Upload Results</span>
+        <button id="closeResultsPopup" style="background:none; border:none; font-size:1.7em; color:var(--danger); cursor:pointer; line-height:1; padding:0 0 0 12px;">&times;</button>
+      </div>
+      <div id="resultsPopupContent" style="margin:18px 24px 0 24px; min-height:60px; color:var(--text-strong-dark); font-size:1em;"></div>
+      <div style="display:flex; justify-content:center; align-items:center; padding: 18px 24px 24px 24px;">
+        <button id="goHomeBtn" class="btn btn-primary" style="width:100%; max-width:220px; font-size:1em;">Go to Home</button>
+      </div>
+    </div>
+  </div>
 </div>
 <!-- Toasts -->
 <div id="toast" role="status" aria-live="polite" class="toast"
