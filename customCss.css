@@ -381,3 +381,10 @@ body {
   margin-left: 4px;
 }
 
+
+.bottom-action-bar {
+  display: flex;
+  justify-content: flex-end; /* pushes button to right */
+  margin-top: 16px;
+  padding: 12px 0;
+}
