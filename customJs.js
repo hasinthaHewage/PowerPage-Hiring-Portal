@@ -29,7 +29,7 @@ let emailID2 = "sivamadhavreddyc@gmail.com";// ---- A Dmmy data for testing ----
 let isAddressEmpty;
 let candidateIdGlobal;
 let resubmitDataGlobal = null;
-const charLength=1000;
+const charLength = 1000;
 
 
 async function setCandidateDetails(emailID) {
@@ -37,7 +37,7 @@ async function setCandidateDetails(emailID) {
 
 
   const candidate = await getCandidateByEmail(email);
-  
+
 
 
   if (candidate) {
@@ -51,7 +51,7 @@ async function setCandidateDetails(emailID) {
 
 
 async function getCandidateByEmail(email) {
-  
+
   if (!email) {
     console.error("Email is required");
     return null;
@@ -70,34 +70,34 @@ async function getCandidateByEmail(email) {
       url: POWER_AUTOMATE_URL_CANDIDATE,
       data: payload
     })
-    .done(function (response) {
+      .done(function (response) {
 
-      try {
-        const data = typeof response === "string" ? JSON.parse(response) : response;
+        try {
+          const data = typeof response === "string" ? JSON.parse(response) : response;
 
-        if (!data) {
-          alert("No candidate found");
+          if (!data) {
+            alert("No candidate found");
+            resolve(null);
+            return;
+          }
+
+          resolve({
+            lastname: data.lastname,
+            candidatecode: data.candidatecode,
+            requirementtitle: data.requirementtitle
+          });
+
+        } catch (err) {
+          console.error("Parse error:", err);
           resolve(null);
-          return;
         }
 
-        resolve({
-          lastname: data.lastname,
-          candidatecode: data.candidatecode,
-          requirementtitle: data.requirementtitle
-        });
-
-      } catch (err) {
-        console.error("Parse error:", err);
+      })
+      .fail(function (err) {
+        console.error("Flow call failed:", err);
+        alert("Error retrieving candidate");
         resolve(null);
-      }
-
-    })
-    .fail(function (err) {
-      console.error("Flow call failed:", err);
-      alert("Error retrieving candidate");
-      resolve(null);
-    });
+      });
 
   });
 }
@@ -218,7 +218,7 @@ function collectSelectionsAndValidate() {
   $$(".input-file").forEach(el => el.classList.remove("input-error"));
 
   $$(".input-file").forEach((input) => {
-    
+
     const files = input.files;
     const docName = input.getAttribute("data-doc") || "";
     const required = input.getAttribute("data-required") === "1";
@@ -270,8 +270,8 @@ function collectSelectionsAndValidate() {
         return;
       }
 
-const description = document.getElementById(`description_${index}`)?.value || "";
-selections.push({ index, docName, file, description });
+      const description = document.getElementById(`description_${index}`)?.value || "";
+      selections.push({ index, docName, file, description });
     });
   });
 
@@ -303,15 +303,15 @@ function refreshUploadButtonState() {
 
   //Button Enable and Disable
 
-const wrapper = document.getElementById('uploadAllWrapper');
+  const wrapper = document.getElementById('uploadAllWrapper');
 
-if (btn.disabled) {
-  btn.style.cursor = 'not-allowed';
-  wrapper.style.cursor = 'not-allowed';
-} else {
-  btn.style.cursor = 'pointer';
-  wrapper.style.cursor = 'pointer';
-}
+  if (btn.disabled) {
+    btn.style.cursor = 'not-allowed';
+    wrapper.style.cursor = 'not-allowed';
+  } else {
+    btn.style.cursor = 'pointer';
+    wrapper.style.cursor = 'pointer';
+  }
 
 }
 
@@ -340,7 +340,7 @@ async function uploadOne({ docName, file, index, description }) {
         contentBytes: base64File
       },
       CandidateID: candidateIdGlobal || "C-000000",
-      Type: docName,  Description: description 
+      Type: docName, Description: description
     };
 
     const payload = {};
@@ -361,7 +361,7 @@ async function uploadOne({ docName, file, index, description }) {
         })
         .fail(function () {
 
-       
+
 
           resolve({
             ok: false,
@@ -377,7 +377,7 @@ async function uploadOne({ docName, file, index, description }) {
 
   } catch (error) {
 
-  
+
 
     return {
       ok: false,
@@ -392,6 +392,8 @@ async function uploadOne({ docName, file, index, description }) {
 
 
 async function uploadAll() {
+  showLoadingPopup("Uploading, please wait...");
+
   const resultsEl = $("#results");
   resultsEl.innerHTML = "";
 
@@ -401,6 +403,7 @@ async function uploadAll() {
   const { selections, errors } = collectSelectionsAndValidate();
 
   if (errors.length > 0) {
+    hideLoadingPopup();
     toast(errors[0], "err");
     const summary = document.createElement("div");
     const h3err = document.createElement("h3");
@@ -413,12 +416,14 @@ async function uploadAll() {
       ulErr.appendChild(li);
     });
     summary.appendChild(ulErr);
+    hideLoadingPopup();
     showResultsPopup(summary.outerHTML);
     btn.disabled = false;
     return;
   }
 
   if (selections.length === 0) {
+    hideLoadingPopup();
     toast("Please choose at least one file to upload.", "err");
     btn.disabled = false;
     return;
@@ -427,7 +432,7 @@ async function uploadAll() {
   const addressResult = await sendAddressOnce();
 
   const uploadingIndexes = new Set(selections.map(s => s.index));
- 
+
 
   const fileResults = await Promise.all(selections.map(uploadOne));
   const results = addressResult ? [addressResult, ...fileResults] : fileResults;
@@ -440,7 +445,7 @@ async function uploadAll() {
     const prev = rowOutcome.get(r.index);
     rowOutcome.set(r.index, prev === "err" ? "err" : (r.ok ? "ok" : "err"));
   });
- 
+
 
   const summary = document.createElement("div");
   if (failures.length === 0) {
@@ -516,7 +521,7 @@ async function uploadAll() {
     summary.appendChild(ulErr);
     toast("Some uploads failed ", "err");
   }
-
+  hideLoadingPopup();
   showResultsPopup(summary.outerHTML);
   btn.disabled = false;
   refreshUploadButtonState();
@@ -524,6 +529,7 @@ async function uploadAll() {
 
 // --- Results Popup Modal Logic ---
 function showResultsPopup(htmlContent) {
+
   const popup = document.getElementById('resultsPopup');
   const content = document.getElementById('resultsPopupContent');
   content.innerHTML = htmlContent;
@@ -535,11 +541,11 @@ function hideResultsPopup() {
 }
 
 // Attach close and navigation logic after DOMContentLoaded
-document.addEventListener("DOMContentLoaded", function() {
+document.addEventListener("DOMContentLoaded", function () {
   const closeBtn = document.getElementById('closeResultsPopup');
   if (closeBtn) closeBtn.onclick = hideResultsPopup;
   const goHomeBtn = document.getElementById('goHomeBtn');
-  if (goHomeBtn) goHomeBtn.onclick = function() {
+  if (goHomeBtn) goHomeBtn.onclick = function () {
     window.location.href = "/"; // Change to your home page URL if needed
   };
 });
@@ -591,7 +597,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   await getResubmitData();             // fetch resubmit data & set global variable
 
   const itemsToRender = getItemsToRender(); // filter items if needed
-  
+
   buildTable(itemsToRender);
 
   // Hide loading popup after buildTable
@@ -747,7 +753,7 @@ async function sendAddressOnce() {
       data: { eventData: JSON.stringify(addressPayload) }
     })
       .done(() => {
-        
+
         resolve({
           ok: true,
           type: "Address",
@@ -755,7 +761,7 @@ async function sendAddressOnce() {
         });
       })
       .fail(() => {
-       
+
 
         resolve({
           ok: false,
@@ -861,4 +867,22 @@ function getItemsToRender() {
     .filter(i => i !== null); // remove nulls if API doc not found in static items
 
   return filteredItems;
+}
+
+
+function showLoadingPopup(message) {
+  const el = document.getElementById('loadingPopup');
+  if (!el) return;
+
+  el.style.display = 'flex';
+
+  const text = el.querySelector("span");
+  if (text) {
+    text.textContent = message || "Loading, please wait...";
+  }
+}
+
+function hideLoadingPopup() {
+  const el = document.getElementById('loadingPopup');
+  if (el) el.style.display = 'none';
 }
