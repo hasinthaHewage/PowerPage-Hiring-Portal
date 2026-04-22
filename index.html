@@ -4,7 +4,7 @@
 <link rel="stylesheet" href="styles.css" /><!-- jQuery (for your existing Power Automate AJAX call) -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js" defer=""></script>
 <!-- App script -->
-<script src="app.js" defer=""></script>
+<script src="add File.en-US.customjs.js" defer=""></script>
 <div class="container">
   `
   <!-- Header Card -->
@@ -83,7 +83,7 @@ border: 1px solid #121831;
     <div class="card__body" style="padding-top: 14px; padding-right: 14px; padding-bottom: 14px; padding-left: 14px;">
       <div class="table-responsive" style="overflow-y: auto; max-height: 420px; overflow-x: auto;">
         <table id="docTable" class="table"
-          style="width: 100%; border-collapse: separate; -webkit-border-horizontal-spacing: 0px; -webkit-border-vertical-spacing: 0px; overflow-x: hidden; overflow-y: hidden;">
+          style="border-collapse: separate; -webkit-border-horizontal-spacing: 0px; -webkit-border-vertical-spacing: 0px;">
           <thead>
             <tr>
               <th align="left" background="initial" bgcolor="rgb(15, 22, 49)"
@@ -98,9 +98,7 @@ border: 1px solid #121831;
                               <th align="left" background="initial" bgcolor="rgb(15, 22, 49)"
                 style="text-align: left; font-weight: 700; color: var(--text-strong); background-image: initial; background-position-x: initial; background-position-y: initial; background-size: initial; background-repeat: initial; background-attachment: initial; background-origin: initial; background-clip: initial; background-color: rgb(15, 22, 49); padding-top: 12px; padding-right: 14px; padding-bottom: 12px; padding-left: 14px; position: sticky; top: 0px; z-index: 1; width: 340px;">
                 Description</th>
-              <th align="left" background="initial" bgcolor="rgb(15, 22, 49)"
-                style="border-top-right-radius: 12px; text-align: left; font-weight: 700; color: var(--text-strong); background-image: initial; background-position-x: initial; background-position-y: initial; background-size: initial; background-repeat: initial; background-attachment: initial; background-origin: initial; background-clip: initial; background-color: rgb(15, 22, 49); padding-top: 12px; padding-right: 14px; padding-bottom: 12px; padding-left: 14px; position: sticky; top: 0px; z-index: 1; width: 120px;">
-                Status</th>
+
       
             </tr>
           </thead>
@@ -118,14 +116,14 @@ border: 1px solid #121831;
 
   <!-- Results Popup Modal -->
   <div id="resultsPopup" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.35); z-index:10000; justify-content:center; align-items:center;">
-    <div class="card" style="padding:0; min-width:340px; max-width:95vw; position:relative; display:flex; flex-direction:column; align-items:stretch; box-shadow: var(--shadow); border-radius: 16px;">
+    <div class="card" style="background: var(--card); padding: 0; border-radius: 16px; box-shadow: var(--shadow); min-width:320px; max-width:95vw; position:relative; display:flex; flex-direction:column; align-items:stretch; border: 1px solid var(--border);">
       <div style="display:flex; align-items:center; justify-content:space-between; padding: 18px 24px 0 24px;">
-        <span style="font-size: 1.2em; font-weight: 700; color: var(--primary-700);">Upload Results</span>
-        <button id="closeResultsPopup" style="background:none; border:none; font-size:1.7em; color:var(--danger); cursor:pointer; line-height:1; padding:0 0 0 12px;">&times;</button>
+        <span style="font-size: 1.18em; font-weight: 700; color: var(--text-strong);">Upload Results</span>
+        <button id="closeResultsPopup" aria-label="Close" style="background:none; border:none; color:var(--danger,#dc2626); font-size:2em; font-weight:700; line-height:1; cursor:pointer; padding:0 0 0 16px;">&times;</button>
       </div>
-      <div id="resultsPopupContent" style="margin:18px 24px 0 24px; min-height:60px; color:var(--text-strong-dark); font-size:1em;"></div>
-      <div style="display:flex; justify-content:center; align-items:center; padding: 18px 24px 24px 24px;">
-        <button id="goHomeBtn" class="btn btn-primary" style="width:100%; max-width:220px; font-size:1em;">Go to Home</button>
+      <div id="resultsPopupContent" style="margin: 18px 24px 0 24px; min-height:60px; color: var(--text-strong-dark); background: var(--text-strong); border-radius: 10px; padding: 18px 16px; font-size: 1em;"></div>
+      <div style="display:flex; justify-content:center; align-items:center; padding: 0 0 24px 0; margin-top: 12px;">
+        <button id="goHomeBtn" class="btn btn-primary" style="min-width: 120px; font-size: 1em;">Go to Home</button>
       </div>
     </div>
   </div>

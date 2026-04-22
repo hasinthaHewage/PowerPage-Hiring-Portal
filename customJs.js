@@ -192,14 +192,8 @@ function buildTable(itemsToRender) {
     ></textarea>
     <div id="address_counter_${index}" class="char-counter">0/${charLength}</div>
   </div>
-</td>
+</td> `;
 
-<td>
-  <span id="status_${index}" class="pill pill--idle">
-    <span class="pill__dot"></span> Pending
-  </span>
-</td>
-    `;
     tbody.appendChild(tr);
   });
 
@@ -325,11 +319,7 @@ if (btn.disabled) {
 async function uploadOne({ docName, file, index, description }) {
   const filename = file.name;
 
-  const statusEl = $(`#status_${index}`);
-  if (statusEl) {
-    statusEl.className = "pill pill--warn";
-    statusEl.innerHTML = `<span class="pill__dot"></span> Uploading…`;
-  }
+
 
   try {
 
@@ -365,20 +355,13 @@ async function uploadOne({ docName, file, index, description }) {
       })
         .done(function () {
 
-          if (statusEl) {
-            statusEl.className = "pill pill--ok";
-            statusEl.innerHTML = `<span class="pill__dot"></span> Success`;
-          }
 
           resolve({ ok: true, docName, filename, index });
 
         })
         .fail(function () {
 
-          if (statusEl) {
-            statusEl.className = "pill pill--err";
-            statusEl.innerHTML = `<span class="pill__dot"></span> Failed`;
-          }
+       
 
           resolve({
             ok: false,
@@ -394,10 +377,7 @@ async function uploadOne({ docName, file, index, description }) {
 
   } catch (error) {
 
-    if (statusEl) {
-      statusEl.className = "pill pill--err";
-      statusEl.innerHTML = `<span class="pill__dot"></span> Failed`;
-    }
+  
 
     return {
       ok: false,
@@ -447,13 +427,7 @@ async function uploadAll() {
   const addressResult = await sendAddressOnce();
 
   const uploadingIndexes = new Set(selections.map(s => s.index));
-  uploadingIndexes.forEach(i => {
-    const el = document.getElementById(`status_${i}`);
-    if (el) {
-      el.className = "pill pill--warn";
-      el.innerHTML = `<span class="pill__dot"></span> Uploading…`;
-    }
-  });
+ 
 
   const fileResults = await Promise.all(selections.map(uploadOne));
   const results = addressResult ? [addressResult, ...fileResults] : fileResults;
@@ -466,17 +440,7 @@ async function uploadAll() {
     const prev = rowOutcome.get(r.index);
     rowOutcome.set(r.index, prev === "err" ? "err" : (r.ok ? "ok" : "err"));
   });
-  rowOutcome.forEach((state, idx) => {
-    const el = document.getElementById(`status_${idx}`);
-    if (!el) return;
-    if (state === "ok") {
-      el.className = "pill pill--ok";
-      el.innerHTML = `<span class="pill__dot"></span> Success`;
-    } else {
-      el.className = "pill pill--err";
-      el.innerHTML = `<span class="pill__dot"></span> Failed`;
-    }
-  });
+ 
 
   const summary = document.createElement("div");
   if (failures.length === 0) {
@@ -720,12 +684,7 @@ function addAddressRow() {
         <div id="address_counter_${index}" class="char-counter">0/${charLength}</div>
       </div>
     </td>
-    <td>
-      <!-- Status cell kept consistent with other rows (optional for text row) -->
-      <span id="status_${index}" class="pill pill--idle">
-        <span class="pill__dot"></span> Pending
-      </span>
-    </td>
+   
   `;
 
   tbody.appendChild(tr);
@@ -774,13 +733,6 @@ async function sendAddressOnce() {
 
   if (!addressValue) return { ok: true, type: "Address", address: "" };
 
-  const statusEl = addressField.closest('tr').querySelector('span[id^="status_"]');
-
-  if (statusEl) {
-    statusEl.className = "pill pill--warn";
-    statusEl.innerHTML = `<span class="pill__dot"></span> Uploading…`;
-  }
-
   const addressPayload = {
     CandidateID: candidateIdGlobal || "C-000000",
     Type: "Address",
@@ -795,11 +747,7 @@ async function sendAddressOnce() {
       data: { eventData: JSON.stringify(addressPayload) }
     })
       .done(() => {
-        if (statusEl) {
-          statusEl.className = "pill pill--ok";
-          statusEl.innerHTML = `<span class="pill__dot"></span> Success`;
-        }
-
+        
         resolve({
           ok: true,
           type: "Address",
@@ -807,10 +755,7 @@ async function sendAddressOnce() {
         });
       })
       .fail(() => {
-        if (statusEl) {
-          statusEl.className = "pill pill--err";
-          statusEl.innerHTML = `<span class="pill__dot"></span> Failed`;
-        }
+       
 
         resolve({
           ok: false,
