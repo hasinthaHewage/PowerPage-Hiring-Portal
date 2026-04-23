@@ -467,8 +467,9 @@ async function uploadAll() {
     summary.appendChild(ul);
     toast("All files uploaded successfully ", "ok");
 
-    // ✅ ADD THIS — trigger completion flow
+    // — trigger completion flow recruiter mail
     const completionResult = await triggerCompletionFlow();
+
     if (completionResult.ok) {
       //alert("Recruiter Email Sent Successfully");
       summary.appendChild(document.createElement("hr"));
@@ -484,6 +485,7 @@ async function uploadAll() {
       recruiterMsg.style.color = "#dc2626";
       summary.appendChild(recruiterMsg);
     }
+
   } else {
     if (successes.length) {
       const h3ok = document.createElement("h3");
@@ -552,55 +554,52 @@ document.addEventListener("DOMContentLoaded", function () {
 
 //main function
 document.addEventListener("DOMContentLoaded", async () => {
-  // Show loading popup before buildTable
+  // Show loading popup before everything
   document.getElementById('loadingPopup').style.display = 'flex';
 
-  createEmailVariaible();  // sets emailID from DOM
+  // Extract email from logged-in user
+  createEmailVariaible();
 
-  await setCandidateDetails(emailID); // fetch candidate & set global candidateIdGlobal
+  // ❌ Case 1: User NOT logged in (no email found)
+  if (!emailID || emailID.trim() === "") {
 
-  if (!candidateIdGlobal) {
-    // Hide main form container
     const container = document.querySelector('.container');
     if (container) container.style.display = 'none';
 
-    // Show error message with improved styling
-    let errorMsg = document.getElementById('candidateErrorMsg');
-    const errorHtml = `
-      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 32px 24px; background: #fff; border-radius: 16px; box-shadow: 0 8px 32px rgba(220,38,38,0.12); max-width: 420px; margin: 60px auto; border: 2px solid #747f1d;">
-        <div style="font-size: 48px; color: #747f1d; margin-bottom: 16px;">&#9888;</div>
-        <div style="font-size: 22px; font-weight: 700; color: #747f1d; margin-bottom: 8px;">Candidate Not Found</div>
-        <div style="font-size: 16px; color: #747f1d;">Matching candidate is not in the database.<br>Please check the email or contact HR for assistance.</div>
-      </div>
-    `;
-    if (!errorMsg) {
-      errorMsg = document.createElement('div');
-      errorMsg.id = 'candidateErrorMsg';
-      errorMsg.innerHTML = errorHtml;
-      // Insert after the element with id="antiforgerytoken"
-      const mainContent = document.getElementById('antiforgerytoken');
-      if (mainContent && mainContent.parentNode) {
-        mainContent.parentNode.insertBefore(errorMsg, mainContent.nextSibling);
-      } else {
-        document.body.appendChild(errorMsg); // fallback if not found
-      }
-    } else {
-      errorMsg.innerHTML = errorHtml;
-      errorMsg.style.display = 'block';
-    }
+    showCustomError(
+      "Please Login",
+      "You are not logged in. Please login to continue."
+    );
 
-    // Hide loading popup
     document.getElementById('loadingPopup').style.display = 'none';
     return;
   }
 
-  await getResubmitData();             // fetch resubmit data & set global variable
+  // ✅ Fetch candidate details
+  await setCandidateDetails(emailID);
 
-  const itemsToRender = getItemsToRender(); // filter items if needed
+  // ❌ Case 2: Logged in but candidate not found
+  if (!candidateIdGlobal) {
 
+    const container = document.querySelector('.container');
+    if (container) container.style.display = 'none';
+
+    showCustomError(
+      "Candidate Not Found",
+      "Matching candidate is not in the database.<br>Please check the email or contact HR for assistance."
+    );
+
+    document.getElementById('loadingPopup').style.display = 'none';
+    return;
+  }
+
+  // ✅ Continue normal flow
+  await getResubmitData();
+
+  const itemsToRender = getItemsToRender();
   buildTable(itemsToRender);
 
-  // Hide loading popup after buildTable
+  // Hide loading popup after table is ready
   document.getElementById('loadingPopup').style.display = 'none';
 
   addAddressRow();
@@ -885,4 +884,32 @@ function showLoadingPopup(message) {
 function hideLoadingPopup() {
   const el = document.getElementById('loadingPopup');
   if (el) el.style.display = 'none';
+}
+
+function showCustomError(title, message) {
+  let errorMsg = document.getElementById('candidateErrorMsg');
+
+  const errorHtml = `
+    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 32px 24px; background: #fff; border-radius: 16px; box-shadow: 0 8px 32px rgba(220,38,38,0.12); max-width: 420px; margin: 60px auto; border: 2px solid #747f1d;">
+      <div style="font-size: 48px; color: #747f1d; margin-bottom: 16px;">&#9888;</div>
+      <div style="font-size: 22px; font-weight: 700; color: #747f1d; margin-bottom: 8px;">${title}</div>
+      <div style="font-size: 16px; color: #747f1d; text-align:center;">${message}</div>
+    </div>
+  `;
+
+  if (!errorMsg) {
+    errorMsg = document.createElement('div');
+    errorMsg.id = 'candidateErrorMsg';
+    errorMsg.innerHTML = errorHtml;
+
+    const mainContent = document.getElementById('antiforgerytoken');
+    if (mainContent && mainContent.parentNode) {
+      mainContent.parentNode.insertBefore(errorMsg, mainContent.nextSibling);
+    } else {
+      document.body.appendChild(errorMsg);
+    }
+  } else {
+    errorMsg.innerHTML = errorHtml;
+    errorMsg.style.display = 'block';
+  }
 }
