@@ -455,13 +455,11 @@ async function uploadAll() {
     const ul = document.createElement("ul");
     successes.forEach(s => {
       const li = document.createElement("li");
-
       if (s.type === "Address") {
         li.textContent = `Address - ${s.value} submitted`;
       } else {
         li.textContent = `${s.docName} — ${s.filename}`;
       }
-
       ul.appendChild(li);
     });
     summary.appendChild(ul);
@@ -471,20 +469,32 @@ async function uploadAll() {
     const completionResult = await triggerCompletionFlow();
 
     if (completionResult.ok) {
-      //alert("Recruiter Email Sent Successfully");
       summary.appendChild(document.createElement("hr"));
       const recruiterMsg = document.createElement("div");
       recruiterMsg.textContent = "Recruiter Email Sent Successfully";
       recruiterMsg.style.color = "#16a34a";
       summary.appendChild(recruiterMsg);
     } else {
-      //alert("File saved,Recruiter Email Send Failed");
       summary.appendChild(document.createElement("hr"));
       const recruiterMsg = document.createElement("div");
       recruiterMsg.textContent = "File saved, Recruiter Email Send Failed";
       recruiterMsg.style.color = "#dc2626";
       summary.appendChild(recruiterMsg);
     }
+
+    // --- EXTENSION: Show custom completion message and hide UI elements ---
+    showCustomError(
+      "Submission Completed",
+      "Thank you for submitting your documents.<br>You can now exit the application."
+    );
+    // Hide table, button, and header
+    const docTable = document.getElementById("docTable");
+    if (docTable) docTable.style.display = "none";
+    const uploadBtn = document.getElementById("uploadAllBtn");
+    if (uploadBtn) uploadBtn.style.display = "none";
+    const header = document.querySelector("header");
+    if (header) header.style.display = "none";
+
 
   } else {
     if (successes.length) {
@@ -544,8 +554,15 @@ function hideResultsPopup() {
 
 // Attach close and navigation logic after DOMContentLoaded
 document.addEventListener("DOMContentLoaded", function () {
+
   const closeBtn = document.getElementById('closeResultsPopup');
-  if (closeBtn) closeBtn.onclick = hideResultsPopup;
+  if (closeBtn) {
+    closeBtn.onclick = function () {
+      hideResultsPopup();
+      hideContainer();
+    };
+  }
+
   const goHomeBtn = document.getElementById('goHomeBtn');
   if (goHomeBtn) goHomeBtn.onclick = function () {
     window.location.href = "/"; // Change to your home page URL if needed
@@ -560,7 +577,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Extract email from logged-in user
   createEmailVariaible();
 
-  // ❌ Case 1: User NOT logged in (no email found)
+  // Case 1: User NOT logged in (no email found)
   if (!emailID || emailID.trim() === "") {
 
     const container = document.querySelector('.container');
@@ -884,6 +901,11 @@ function showLoadingPopup(message) {
 function hideLoadingPopup() {
   const el = document.getElementById('loadingPopup');
   if (el) el.style.display = 'none';
+}
+
+function hideContainer() {
+   const container = document.querySelector('.container');
+    if (container) container.style.display = 'none';
 }
 
 function showCustomError(title, message) {
