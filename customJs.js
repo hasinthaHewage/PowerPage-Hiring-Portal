@@ -1,8 +1,9 @@
-// ---- Configuration ----
+ // ---- Configuration ----
 const POWER_AUTOMATE_URL = "/_api/cloudflow/v1.0/trigger/17a831ce-3f1c-f111-8341-70a8a529124a";
 const POWER_AUTOMATE_URL_COMPLETE = "/_api/cloudflow/v1.0/trigger/846cd198-db1d-f111-8341-70a8a529124a";
 const POWER_AUTOMATE_URL_RESUBMISSION = "/_api/cloudflow/v1.0/trigger/913b23fa-f020-f111-88b1-70a8a529124a";
 const POWER_AUTOMATE_URL_CANDIDATE = "/_api/cloudflow/v1.0/trigger/02608665-ad21-f111-88b1-70a8a529124a";
+const POWER_AUTOMATE_URL_CHECK_SUBMISSION = "/_api/cloudflow/v1.0/trigger/38e360c3-ac1e-f111-88b3-70a8a529124a";
 
 // ---- Full Document Master List ----
 const items = [
@@ -559,7 +560,7 @@ document.addEventListener("DOMContentLoaded", function () {
   if (closeBtn) {
     closeBtn.onclick = function () {
       hideResultsPopup();
-      hideContainer();
+      hideUI();
     };
   }
 
@@ -580,8 +581,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Case 1: User NOT logged in (no email found)
   if (!emailID || emailID.trim() === "") {
 
-    const container = document.querySelector('.container');
-    if (container) container.style.display = 'none';
+ hideUI();
 
     showCustomError(
       "Please Login",
@@ -610,8 +610,26 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
-  // ✅ Continue normal flow
+  // STEP 1: check submission status
+  const status = await checkSubmissionStatus();
+
+  // STEP 2: get resubmission data
   await getResubmitData();
+  //alert(status.locked+"-"+ !resubmitDataGlobal+"-"+ resubmitDataGlobal.length);
+
+  // 🔥 FINAL DECISION (your logic)
+  if (status.locked &&  (!resubmitDataGlobal || resubmitDataGlobal.length === 0)) {
+    hideUI();
+
+    showCustomError(
+      "Already Submitted",
+      "Your documents have already been submitted and resubmission is not allowed."
+    );
+
+    hideLoadingPopup();
+    return;
+  }
+
 
   const itemsToRender = getItemsToRender();
   buildTable(itemsToRender);
@@ -904,8 +922,8 @@ function hideLoadingPopup() {
 }
 
 function hideContainer() {
-   const container = document.querySelector('.container');
-    if (container) container.style.display = 'none';
+  const container = document.querySelector('.container');
+  if (container) container.style.display = 'none';
 }
 
 function showCustomError(title, message) {
@@ -934,4 +952,48 @@ function showCustomError(title, message) {
     errorMsg.innerHTML = errorHtml;
     errorMsg.style.display = 'block';
   }
+}
+
+
+async function checkSubmissionStatus() {
+  const payload = {
+    eventData: JSON.stringify({
+      CandidateID: candidateIdGlobal || "C-000000"
+    })
+  };
+
+  return new Promise((resolve) => {
+    shell.ajaxSafePost({
+      type: "POST",
+      url: POWER_AUTOMATE_URL_CHECK_SUBMISSION,
+      data: payload
+    })
+      .done(res => {
+        try {
+          const data = typeof res === "string" ? JSON.parse(res) : res;
+          
+          resolve({
+            locked: (data.locked === "true" )  // ONLY ONE FLAG NEEDED
+          });
+
+        } catch {
+          resolve({ locked: false });
+        }
+      })
+      .fail(() => resolve({ locked: false }));
+  });
+}
+
+
+function hideUI() {
+  // Hide bottom action bar
+  const actionBar = document.querySelector('.bottom-action-bar');
+  if (actionBar) actionBar.style.display = 'none';
+
+  // Hide main table section (card)
+  const cardSection = document.querySelector('section.card');
+  if (cardSection) cardSection.style.display = 'none';
+
+    const header = document.querySelector('.header');
+  if (header) header.style.display = 'none';
 }
